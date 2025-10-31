@@ -111,46 +111,58 @@
 
     }
 
-    const loadImage = function (src) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-            img.src = src;
-        })
-    }
+	const loadImage = function (src) {
+		return new Promise((resolve, reject) => {
+			const img = new Image();
+			img.onload = () => resolve(img);
+			img.onerror = reject;
+			img.src = src;
+		})
+	}
 
 
-    const loadImagesAndRender = function () {
+	const loadImagesAndRender = function () {
 
-        var imageUrls = [
-            'img/logo.svg',
-            'img/poses/' + inputPose.value + '.png'
-        ];
+		// Build entries with ids to maintain mapping
+		var entries = [
+			{ id: 'logo', url: 'img/logo.svg' },
+			{ id: inputPose.id, url: 'img/poses/' + inputPose.value + '.png' }
+		]
 
-        inputBackgroundURL.value && inputBackgroundURL.value.indexOf('blob22:') !== 0 && imageUrls.push(inputBackgroundURL.value)
-        inputSecondURL.value && inputSecondURL.value.indexOf('blob22:') !== 0 && imageUrls.push(inputSecondURL.value)
-        inputThirdURL.value && inputThirdURL.value.indexOf('blob22:') !== 0 && imageUrls.push(inputThirdURL.value)
+		if (inputBackgroundURL.value && inputBackgroundURL.value.indexOf('blob22:') !== 0) {
+			entries.push({ id: inputBackgroundURL.id, url: inputBackgroundURL.value })
+		}
+		if (inputSecondURL.value && inputSecondURL.value.indexOf('blob22:') !== 0) {
+			entries.push({ id: inputSecondURL.id, url: inputSecondURL.value })
+		}
+		if (inputThirdURL.value && inputThirdURL.value.indexOf('blob22:') !== 0) {
+			entries.push({ id: inputThirdURL.id, url: inputThirdURL.value })
+		}
 
-        imageUrls = imageUrls.map(url => {
-            if (url.indexOf('unsplash.com') > -1 && url.indexOf('proxyoff') == -1) {
-                return './image.php?url=' + encodeURIComponent(url)
-            } else {
-                return url
-            }
-        })
+		// Map URLs
+		const mapped = entries.map(e => {
+			var finalUrl = e.url
+			if (finalUrl.indexOf('gemini://') === 0) {
+				finalUrl = './image.php?url=' + encodeURIComponent(finalUrl)
+			} else if (finalUrl.indexOf('unsplash.com') > -1 && finalUrl.indexOf('proxyoff') == -1) {
+				finalUrl = './image.php?url=' + encodeURIComponent(finalUrl)
+			}
+			return { id: e.id, src: finalUrl }
+		})
 
-
-        return Promise.all(imageUrls.map(loadImage)).then(images => {
-            var i = 0
-            imgLogo = images[i++]
-            imgPose = images[i++]
-            if (inputBackgroundURL.value && inputBackgroundURL.value.indexOf('blob22:') !== 0) { imgBackground = images[i++] }
-            if (inputSecondURL.value && inputSecondURL.value.indexOf('blob22:') !== 0) { imgSecond = images[i++] }
-            if (inputThirdURL.value && inputThirdURL.value.indexOf('blob22:') !== 0) { imgThird = images[i++] }
-            render()
-        })
-    }
+		return Promise.all(mapped.map(m => loadImage(m.src))).then(images => {
+			for (var i = 0; i < mapped.length; i++) {
+				const id = mapped[i].id
+				const im = images[i]
+				if (id === 'logo') { imgLogo = im; continue }
+				if (id === inputPose.id) { imgPose = im; continue }
+				if (id === inputBackgroundURL.id) { imgBackground = im; continue }
+				if (id === inputSecondURL.id) { imgSecond = im; continue }
+				if (id === inputThirdURL.id) { imgThird = im; continue }
+			}
+			render()
+		})
+	}
 
 
     const drawBackground = function () {
@@ -365,6 +377,52 @@
     btnPromptSecond.addEventListener('click', function () {
         spanPromptSecond.style.display = (spanPromptSecond.style.display === 'none' || !spanPromptSecond.style.display) ? 'inline' : 'none'
     })
+
+    // Enter in prompt fields triggers associated Generate button
+    inputPromptBackground.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); btnGenerateBackground.click(); }
+    })
+    inputPromptSecond.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); btnGenerateSecond.click(); }
+    })
+
+    // Generate via Gemini for Background
+	btnGenerateBackground.addEventListener('click', function () {
+		const prompt = inputPromptBackground.value.trim()
+		if (!prompt) { return }
+		const previousText = this.textContent
+		this.disabled = true
+		this.textContent = '⏳'
+        inputBackgroundURL.value = 'gemini://' + prompt
+		loadImagesAndRender()
+			.then(() => {
+				this.disabled = false
+				this.textContent = previousText
+			})
+			.catch(() => {
+				this.disabled = false
+				this.textContent = previousText
+			})
+	})
+
+    // Generate via Gemini for SecondImage
+	btnGenerateSecond.addEventListener('click', function () {
+		const prompt = inputPromptSecond.value.trim()
+		if (!prompt) { return }
+		const previousText = this.textContent
+		this.disabled = true
+		this.textContent = '⏳'
+        inputSecondURL.value = 'gemini://' + prompt
+		loadImagesAndRender()
+			.then(() => {
+				this.disabled = false
+				this.textContent = previousText
+			})
+			.catch(() => {
+				this.disabled = false
+				this.textContent = previousText
+			})
+	})
 
 
     document.querySelectorAll('[data-image-target]').forEach((input) => input.onchange = function (e) {
