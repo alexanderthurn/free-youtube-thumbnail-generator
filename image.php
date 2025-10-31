@@ -101,7 +101,7 @@ if ($isGemini) {
     $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent';
 
     // Prompt nur präfixen, wenn eine Pose übergeben wurde
-    $prefixedPrompt = ($poseUrl !== '') ? ('Using the provided image of a man in a suit, ' . $prompt . '.The background has to be pink.') : $prompt;
+    $prefixedPrompt = $prompt;
 
     $parts = [ [ 'text' => $prefixedPrompt ] ];
     if ($poseB64) {

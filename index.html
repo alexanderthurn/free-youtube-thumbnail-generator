@@ -28,7 +28,7 @@
             data-image-target="inputThirdURL" /><span id="spanThirdPosition"></span></div>
     <div>Pose: <input id="inputPose" step="1" type="number" min="0" max="30" data-force-imageload /><button
             title="chaos" onclick="randomizeInputByMinMax(inputPose, true); loadImagesAndRender()">c</button><span
-            id="spanPoses"></span><span id="spanPosesPosition"></span><button id="btnPromptPose" title="Generate with prompt">P</button><span id="spanPromptPose" style="display:none;"> Prompt: <input id="inputPromptPose" type="text" size="40" placeholder="Describe pose edit..."><button id="btnGeneratePose" title="Generate pose image">Generate</button></span><input id="inputPoseURL" type="hidden" data-force-imageload /></div>
+            id="spanPoses"></span><span id="spanPosesPosition"></span><button id="btnPromptPose" title="Generate with prompt">P</button><span id="spanPromptPose" style="display:none;"> Prompt: <input value="Using the provided image of a man in a suit, give him glasses. Ensure the man's face and features remain completely unchanged. The background has to be pitch black." id="inputPromptPose" type="text" size="40" placeholder="Describe pose edit..."><button id="btnGeneratePose" title="Generate pose image">Generate</button> <label title="Apply chroma key to pose"><input id="chkPoseMask" type="checkbox" checked> Mask</label> <button id="btnPoseSample" title="Sample key color from borders of pose">Sample</button> Color: <input id="inputPoseKeyColor" type="color" value="#ff66cc"> Tol: <input id="inputPoseTolerance" type="range" min="0" max="255" value="80"> Soft: <input id="inputPoseSoftness" type="range" min="0" max="255" value="60"></span><input id="inputPoseURL" type="hidden" data-force-imageload /></div>
     <div> Text1: <input id="inputText1" type="text"><span id="spanText1Position"></span></div>
     <div>Text2: <input id="inputText2" type="text"><span id="spanText2Position"></span></div>
 
@@ -56,6 +56,7 @@
     var imgPose = null
     var imgSecond = null
     var imgThird = null
+    var poseProcessedCanvas = null
 
 
     //inputBackgroundURL.value = urlBackground
@@ -67,6 +68,9 @@
     const colorLogo = 'black'
     const paddingBackgroundLogoPixel = 10
     const imgPoseWidth = canvas.width * 0.5
+
+    // One-time flag to avoid re-generating Pose when generating other images
+    var suspendPoseGeminiOnce = false
 
 
     const saveToURL = function () {
@@ -126,7 +130,7 @@
 		// Build entries with ids to maintain mapping
 		var entries = [
 			{ id: 'logo', url: 'img/logo.svg' },
-			{ id: inputPose.id, url: (inputPoseURL.value && inputPoseURL.value.indexOf('blob22:') !== 0) ? inputPoseURL.value : ('img/poses/' + inputPose.value + '.png') }
+			{ id: inputPose.id, url: (inputPoseURL.value && !suspendPoseGeminiOnce && inputPoseURL.value.indexOf('blob22:') !== 0) ? inputPoseURL.value : ('img/poses/' + inputPose.value + '.png') }
 		]
 
 		if (inputBackgroundURL.value && inputBackgroundURL.value.indexOf('blob22:') !== 0) {
@@ -165,6 +169,7 @@
 				if (id === inputSecondURL.id) { imgSecond = im; continue }
 				if (id === inputThirdURL.id) { imgThird = im; continue }
 			}
+			updatePoseMask()
 			render()
 		})
 	}
@@ -270,7 +275,10 @@
     }
 
     const drawImagePose = function () {
-        drawImageT(imgPose, inputPose.id, canvas.width * 0.1, canvas.height * 0.3, imgPoseWidth, imgPoseWidth * imgPose.height / imgPose.width)
+        const source = (typeof chkPoseMask !== 'undefined' && chkPoseMask.checked && poseProcessedCanvas) ? poseProcessedCanvas : imgPose
+        const w = imgPoseWidth
+        const h = w * source.height / source.width
+        drawImageT(source, inputPose.id, canvas.width * 0.1, canvas.height * 0.3, w, h)
     }
 
     const drawImageBackground = function () {
@@ -292,7 +300,7 @@
         drawBackground()
         if (imgBackground) { drawImageBackground() }
         if (imgThird) { drawImageThird() }
-        drawImagePose()
+        if (imgPose) { drawImagePose() }
         if (imgSecond) { drawImageSecond() }
         drawImageLogo()
         drawText1()
@@ -407,12 +415,15 @@
 		this.disabled = true
 		this.textContent = '⏳'
         inputBackgroundURL.value = 'gemini://' + prompt
+		suspendPoseGeminiOnce = true
 		loadImagesAndRender()
 			.then(() => {
+				suspendPoseGeminiOnce = false
 				this.disabled = false
 				this.textContent = previousText
 			})
 			.catch(() => {
+				suspendPoseGeminiOnce = false
 				this.disabled = false
 				this.textContent = previousText
 			})
@@ -426,16 +437,118 @@
 		this.disabled = true
 		this.textContent = '⏳'
         inputSecondURL.value = 'gemini://' + prompt
+		suspendPoseGeminiOnce = true
 		loadImagesAndRender()
 			.then(() => {
+				suspendPoseGeminiOnce = false
 				this.disabled = false
 				this.textContent = previousText
 			})
 			.catch(() => {
+				suspendPoseGeminiOnce = false
 				this.disabled = false
 				this.textContent = previousText
 			})
 	})
+
+    // --- Pose masking utilities ---
+    const hexToRgb = function (hex) {
+        try {
+            const h = hex.replace('#','')
+            const n = parseInt(h, 16)
+            if (h.length === 6) {
+                return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
+            }
+        } catch(e) { }
+        return { r: 255, g: 102, b: 204 }
+    }
+
+    const samplePoseKeyFromBorders = function (img, sample) {
+        const w = img.width, h = img.height
+        const s = Math.max(1, Math.min(sample, Math.min(w, h)))
+        const off = document.createElement('canvas')
+        off.width = w; off.height = h
+        const c = off.getContext('2d')
+        c.drawImage(img, 0, 0)
+        const get = (x,y)=>c.getImageData(x,y,1,1).data
+        let sumR=0,sumG=0,sumB=0,cnt=0
+        for (let x=0;x<w;x++) {
+            for (let y=0;y<s;y++){ const d=get(x,y); sumR+=d[0]; sumG+=d[1]; sumB+=d[2]; cnt++; }
+            for (let y=h-s;y<h;y++){ const d=get(x,y); sumR+=d[0]; sumG+=d[1]; sumB+=d[2]; cnt++; }
+        }
+        for (let y=0;y<h;y++) {
+            for (let x=0;x<s;x++){ const d=get(x,y); sumR+=d[0]; sumG+=d[1]; sumB+=d[2]; cnt++; }
+            for (let x=w-s;x<w;x++){ const d=get(x,y); sumR+=d[0]; sumG+=d[1]; sumB+=d[2]; cnt++; }
+        }
+        return { r: Math.round(sumR/cnt), g: Math.round(sumG/cnt), b: Math.round(sumB/cnt) }
+    }
+
+    const updatePoseMask = function () {
+        poseProcessedCanvas = null
+        if (!imgPose) return
+        if (typeof chkPoseMask === 'undefined' || !chkPoseMask.checked) return
+        const tol = parseInt(inputPoseTolerance.value || '80', 10)
+        const soft = parseInt(inputPoseSoftness.value || '60', 10)
+        let rgb = hexToRgb(inputPoseKeyColor.value || '#ff66cc')
+        // If color is default and we have an image, auto-sample on first run
+        if (!inputPoseKeyColor.dataset.sampled) {
+            const sampled = samplePoseKeyFromBorders(imgPose, 5)
+            rgb = sampled
+            const hex = '#' + [sampled.r, sampled.g, sampled.b].map(x=>x.toString(16).padStart(2,'0')).join('')
+            inputPoseKeyColor.value = hex
+            inputPoseKeyColor.dataset.sampled = '1'
+        }
+
+        const w = imgPose.width, h = imgPose.height
+        const off = document.createElement('canvas')
+        off.width = w; off.height = h
+        const ctx2 = off.getContext('2d')
+        ctx2.drawImage(imgPose, 0, 0)
+        const imgData = ctx2.getImageData(0, 0, w, h)
+        const data = imgData.data
+        const thr = Math.max(0, tol)
+        const sf = Math.max(0, soft)
+        const softLo = Math.max(0, thr - sf)
+        const softHi = thr + sf
+        for (let i=0;i<data.length;i+=4){
+            const r=data[i], g=data[i+1], b=data[i+2]
+            const dr=r-rgb.r, dg=g-rgb.g, db=b-rgb.b
+            const d=Math.sqrt(dr*dr+dg*dg+db*db)
+            let alphaFactor = 1
+            if (d <= softLo) {
+                alphaFactor = 0
+            } else if (d < softHi) {
+                alphaFactor = (d - softLo) / (softHi - softLo)
+            }
+            data[i+3] = Math.round(data[i+3] * alphaFactor)
+        }
+        ctx2.putImageData(imgData, 0, 0)
+        poseProcessedCanvas = off
+    }
+
+    // UI events for pose masking
+    if (typeof chkPoseMask !== 'undefined') {
+        chkPoseMask.addEventListener('change', function(){ updatePoseMask(); render(); })
+    }
+    if (typeof inputPoseKeyColor !== 'undefined') {
+        inputPoseKeyColor.addEventListener('input', function(){ inputPoseKeyColor.dataset.sampled='1'; updatePoseMask(); render(); })
+    }
+    if (typeof inputPoseTolerance !== 'undefined') {
+        inputPoseTolerance.addEventListener('input', function(){ updatePoseMask(); render(); })
+    }
+    if (typeof inputPoseSoftness !== 'undefined') {
+        inputPoseSoftness.addEventListener('input', function(){ updatePoseMask(); render(); })
+    }
+    if (typeof btnPoseSample !== 'undefined') {
+        btnPoseSample.addEventListener('click', function(){
+            if (!imgPose) return
+            const sampled = samplePoseKeyFromBorders(imgPose, 5)
+            const hex = '#' + [sampled.r, sampled.g, sampled.b].map(x=>x.toString(16).padStart(2,'0')).join('')
+            inputPoseKeyColor.value = hex
+            inputPoseKeyColor.dataset.sampled = '1'
+            updatePoseMask(); render();
+        })
+    }
 
 	// Generate via Gemini for Pose (passes pose index to backend)
 	btnGeneratePose.addEventListener('click', function () {
