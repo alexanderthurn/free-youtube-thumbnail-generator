@@ -45,10 +45,49 @@ if ($isGemini) {
     $prompt = preg_replace('#^gemini://#i', '', $rawUrl);
     $prompt = urldecode($prompt);
 
+    # Optional: Pose-Bild laden (lokale Datei oder entfernte URL) und Base64 enkodieren
+    $poseUrl = isset($_GET['pose']) ? trim($_GET['pose']) : '';
+    $poseB64 = null;
+    $poseMime = 'image/png';
+    if ($poseUrl !== '') {
+        $poseData = null;
+        if (preg_match('#^https?://#i', $poseUrl)) {
+            // Remote holen
+            $chPose = curl_init($poseUrl);
+            curl_setopt_array($chPose, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_TIMEOUT => 10,
+            ]);
+            $poseData = curl_exec($chPose);
+            if ($poseData !== false) {
+                $ct = curl_getinfo($chPose, CURLINFO_CONTENT_TYPE);
+                if (is_string($ct) && $ct !== '') { $poseMime = $ct; }
+            }
+            curl_close($chPose);
+        } else {
+            // Lokale Datei relativ zum Projektverzeichnis
+            $localPath = $poseUrl;
+            if (strpos($localPath, '/') !== 0) {
+                $localPath = __DIR__ . '/' . $localPath;
+            }
+            if (is_readable($localPath)) {
+                $poseData = @file_get_contents($localPath);
+                $detected = @mime_content_type($localPath);
+                if ($detected) { $poseMime = $detected; }
+            }
+        }
+        if ($poseData !== null && $poseData !== false) {
+            $poseB64 = base64_encode($poseData);
+        }
+    }
+
     # Disk-Cache in img/gemini anhand des Prompt-Hashes
     $cacheDir = __DIR__ . '/img/gemini';
     if (!is_dir($cacheDir)) { @mkdir($cacheDir, 0777, true); }
-    $hash = sha1($prompt);
+    $hashSource = $prompt . '|' . ($poseUrl ?: '');
+    $hash = sha1($hashSource);
     $cacheFile = $cacheDir . '/gemini-' . $hash . '.png';
 
     if (is_readable($cacheFile)) {
@@ -60,15 +99,23 @@ if ($isGemini) {
     }
 
     $endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent';
-    $payload = json_encode([
-        'contents' => [[
-            'parts' => [['text' => $prompt]]
-        ]],
-        'generationConfig' => [
-            'imageConfig' => [
-                'aspectRatio' => '16:9'
+
+    // Prompt nur präfixen, wenn eine Pose übergeben wurde
+    $prefixedPrompt = ($poseUrl !== '') ? ('Using the provided image of a man in a suit, ' . $prompt . '.The background has to be pink.') : $prompt;
+
+    $parts = [ [ 'text' => $prefixedPrompt ] ];
+    if ($poseB64) {
+        $parts[] = [
+            'inline_data' => [
+                'mime_type' => $poseMime,
+                'data' => $poseB64
             ]
-        ]
+        ];
+    }
+
+    $payload = json_encode([
+        'contents' => [[ 'parts' => $parts ]],
+        'generationConfig' => [ 'imageConfig' => [ 'aspectRatio' => '16:9' ] ]
     ]);
 
     $ch = curl_init($endpoint);
