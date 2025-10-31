@@ -28,7 +28,7 @@
             data-image-target="inputThirdURL" /><span id="spanThirdPosition"></span></div>
     <div>Pose: <input id="inputPose" step="1" type="number" min="0" max="30" data-force-imageload /><button
             title="chaos" onclick="randomizeInputByMinMax(inputPose, true); loadImagesAndRender()">c</button><span
-            id="spanPoses"></span><span id="spanPosesPosition"></span></div>
+            id="spanPoses"></span><span id="spanPosesPosition"></span><button id="btnPromptPose" title="Generate with prompt">P</button><span id="spanPromptPose" style="display:none;"> Prompt: <input id="inputPromptPose" type="text" size="40" placeholder="Describe pose edit..."><button id="btnGeneratePose" title="Generate pose image">Generate</button></span><input id="inputPoseURL" type="hidden" data-force-imageload /></div>
     <div> Text1: <input id="inputText1" type="text"><span id="spanText1Position"></span></div>
     <div>Text2: <input id="inputText2" type="text"><span id="spanText2Position"></span></div>
 
@@ -126,7 +126,7 @@
 		// Build entries with ids to maintain mapping
 		var entries = [
 			{ id: 'logo', url: 'img/logo.svg' },
-			{ id: inputPose.id, url: 'img/poses/' + inputPose.value + '.png' }
+			{ id: inputPose.id, url: (inputPoseURL.value && inputPoseURL.value.indexOf('blob22:') !== 0) ? inputPoseURL.value : ('img/poses/' + inputPose.value + '.png') }
 		]
 
 		if (inputBackgroundURL.value && inputBackgroundURL.value.indexOf('blob22:') !== 0) {
@@ -143,7 +143,12 @@
 		const mapped = entries.map(e => {
 			var finalUrl = e.url
 			if (finalUrl.indexOf('gemini://') === 0) {
-				finalUrl = './image.php?url=' + encodeURIComponent(finalUrl)
+				if (e.id === inputPose.id) {
+					const poseImageUrl = 'img/poses/' + inputPose.value + '.png'
+					finalUrl = './image.php?url=' + encodeURIComponent(finalUrl) + '&pose=' + encodeURIComponent(poseImageUrl)
+				} else {
+					finalUrl = './image.php?url=' + encodeURIComponent(finalUrl)
+				}
 			} else if (finalUrl.indexOf('unsplash.com') > -1 && finalUrl.indexOf('proxyoff') == -1) {
 				finalUrl = './image.php?url=' + encodeURIComponent(finalUrl)
 			}
@@ -366,7 +371,7 @@
     addTransformMenu(inputSecondURL.id, spanSecondPosition)
     addTransformMenu(inputThirdURL.id, spanThirdPosition)
 
-    poseList.innerHTML = [...Array(posesCount).keys()].map(i => '<img onclick="inputPose.value=' + i + ';loadImagesAndRender()" src="img/poses_thumbs/' + i + '.png">').join()
+    poseList.innerHTML = [...Array(posesCount).keys()].map(i => '<img onclick="inputPose.value=' + i + ';inputPoseURL.value=\'\';loadImagesAndRender()" src="img/poses_thumbs/' + i + '.png">').join()
 
 
 
@@ -377,6 +382,10 @@
     btnPromptSecond.addEventListener('click', function () {
         spanPromptSecond.style.display = (spanPromptSecond.style.display === 'none' || !spanPromptSecond.style.display) ? 'inline' : 'none'
     })
+	// Toggle visibility for Pose prompt
+	btnPromptPose.addEventListener('click', function () {
+		spanPromptPose.style.display = (spanPromptPose.style.display === 'none' || !spanPromptPose.style.display) ? 'inline' : 'none'
+	})
 
     // Enter in prompt fields triggers associated Generate button
     inputPromptBackground.addEventListener('keydown', function (e) {
@@ -385,6 +394,10 @@
     inputPromptSecond.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); btnGenerateSecond.click(); }
     })
+	// Enter in Pose prompt triggers Generate
+	inputPromptPose.addEventListener('keydown', function (e) {
+		if (e.key === 'Enter') { e.preventDefault(); btnGeneratePose.click(); }
+	})
 
     // Generate via Gemini for Background
 	btnGenerateBackground.addEventListener('click', function () {
@@ -413,6 +426,25 @@
 		this.disabled = true
 		this.textContent = '⏳'
         inputSecondURL.value = 'gemini://' + prompt
+		loadImagesAndRender()
+			.then(() => {
+				this.disabled = false
+				this.textContent = previousText
+			})
+			.catch(() => {
+				this.disabled = false
+				this.textContent = previousText
+			})
+	})
+
+	// Generate via Gemini for Pose (passes pose index to backend)
+	btnGeneratePose.addEventListener('click', function () {
+		const prompt = inputPromptPose.value.trim()
+		if (!prompt) { return }
+		const previousText = this.textContent
+		this.disabled = true
+		this.textContent = '⏳'
+		inputPoseURL.value = 'gemini://' + prompt
 		loadImagesAndRender()
 			.then(() => {
 				this.disabled = false
