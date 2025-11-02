@@ -17,6 +17,9 @@
         .assetItem { position: relative; display: inline-block; margin: 2px; }
         .assetItem img { display: block; }
         .deleteBtn { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 2px; cursor: pointer; font-size: 12px; line-height: 1; padding: 2px 4px; }
+        .selectedControl { background: rgba(255, 240, 0, 0.35); outline: 2px solid #ffea00; outline-offset: 2px; }
+        .selectedSection { background: rgba(255, 240, 0, 0.35); outline: 3px solid #ffea00; }
+        .canvasFocused { outline: 3px solid #ffea00; }
     </style>
 </head>
 
@@ -31,15 +34,15 @@
 
     <div class="ui-level-0"><a href="https://unsplash.com/s/photos/werte?license=free" target="unsplash">Background</a>: <input
             id="inputBackgroundURL" type="text" size="50" data-force-imageload><input type="file"
-            data-image-target="inputBackgroundURL" /><span id="spanBackgroundPosition" class="ui-level-0"></span><button id="btnPromptBackground" class="ui-level-0" title="Generate with prompt">P</button><span id="spanPromptBackground" class="ui-level-0" style="display:none;"> Prompt: <input id="inputPromptBackground" type="text" size="40" placeholder="Describe background..."><button id="btnGenerateBackground" title="Generate background image">Generate</button> <label title="Include Background as reference"><input id="chkBgBackground" type="checkbox"> Background</label> <label title="Include Pose as reference"><input id="chkBgPose" type="checkbox"> Pose</label> <label title="Include SecondImage as reference"><input id="chkBgSecond" type="checkbox"> SecondImage</label> <label title="Include ThirdImage as reference"><input id="chkBgThird" type="checkbox"> ThirdImage</label></span></div>
+            data-image-target="inputBackgroundURL" /><span id="spanBackgroundPosition" class="ui-level-1"></span><button id="btnPromptBackground" class="ui-level-0" title="Generate with prompt">P</button><span id="spanPromptBackground" class="ui-level-0" style="display:none;"> Prompt: <input id="inputPromptBackground" type="text" size="40" placeholder="Describe background..."><button id="btnGenerateBackground" title="Generate background image">Generate</button> <label title="Include Background as reference"><input id="chkBgBackground" type="checkbox"> Background</label> <label title="Include Pose as reference"><input id="chkBgPose" type="checkbox"> Pose</label> <label title="Include SecondImage as reference"><input id="chkBgSecond" type="checkbox"> SecondImage</label> <label title="Include ThirdImage as reference"><input id="chkBgThird" type="checkbox"> ThirdImage</label></span></div>
+    <div class="ui-level-0">Pose: <input id="inputPose" step="1" type="number" min="0" max="30" data-force-imageload /><button
+            title="chaos" onclick="inputPoseURL.value=''; if (typeof inputPoseKeyColor!=='undefined'){ inputPoseKeyColor.dataset.sampled=''; } randomizeInputByMinMax(inputPose, true); loadImagesAndRender()">c</button><span
+            id="spanPoses"></span><span id="spanPosesPosition" class="ui-level-1"></span><button id="btnPromptPose" class="ui-level-0" title="Generate with prompt">P</button><span id="spanPromptPose" class="ui-level-1" style="display:none;"> Prompt: <textarea id="inputPromptPose" rows="4" cols="80" placeholder="Describe pose edit...">Using the provided image of a man in a suit, give him a magic hat. Ensure the man's face and features remain completely unchanged. The background has to be #ff00ff.</textarea><button id="btnGeneratePose" title="Generate pose image">Generate</button> <label title="Apply chroma key to pose"><input id="chkPoseMask" type="checkbox" checked> Mask</label> <button id="btnPoseSample" title="Sample key color from borders of pose">Sample</button> Color: <input id="inputPoseKeyColor" type="color" value="#ff00ff"> Tol: <input id="inputPoseTolerance" type="range" min="-1" max="255" value="0"> Soft: <input id="inputPoseSoftness" type="range" min="-1" max="255" value="0"></span><input id="inputPoseURL" type="hidden" data-force-imageload /></div>
     <div class="ui-level-1"><a href="https://library.techsmith.com/en/camtasia/assets/Graphic/Photo">SecondImage</a>: <input
             id="inputSecondURL" type="text" size="50" data-force-imageload><input type="file"
             data-image-target="inputSecondURL" /><span id="spanSecondPosition"></span><button id="btnPromptSecond" title="Generate with prompt">P</button><span id="spanPromptSecond" style="display:none;"> Prompt: <input id="inputPromptSecond" type="text" size="40" placeholder="Describe second image..."><button id="btnGenerateSecond" title="Generate second image">Generate</button> <label title="Apply chroma key to SecondImage"><input id="chkSecondMask" type="checkbox" checked> Mask</label> <button id="btnSecondSample" title="Sample key color from borders of SecondImage">Sample</button> Color: <input id="inputSecondKeyColor" type="color" value="#ff00ff"> Tol: <input id="inputSecondTolerance" type="range" min="-1" max="255" value="0"> Soft: <input id="inputSecondSoftness" type="range" min="-1" max="255" value="0"></span></div>
     <div class="ui-level-1">ThirdImage: <input id="inputThirdURL" type="text" size="50" data-force-imageload><input type="file"
             data-image-target="inputThirdURL" /><span id="spanThirdPosition"></span><button id="btnPromptThird" title="Generate with prompt">P</button><span id="spanPromptThird" style="display:none;"> Prompt: <input id="inputPromptThird" type="text" size="40" placeholder="Describe third image..."><button id="btnGenerateThird" title="Generate third image">Generate</button> <label title="Apply chroma key to ThirdImage"><input id="chkThirdMask" type="checkbox" checked> Mask</label> <button id="btnThirdSample" title="Sample key color from borders of ThirdImage">Sample</button> Color: <input id="inputThirdKeyColor" type="color" value="#ff00ff"> Tol: <input id="inputThirdTolerance" type="range" min="-1" max="255" value="0"> Soft: <input id="inputThirdSoftness" type="range" min="-1" max="255" value="0"></span></div>
-    <div class="ui-level-0">Pose: <input id="inputPose" step="1" type="number" min="0" max="30" data-force-imageload /><button
-            title="chaos" onclick="inputPoseURL.value=''; if (typeof inputPoseKeyColor!=='undefined'){ inputPoseKeyColor.dataset.sampled=''; } randomizeInputByMinMax(inputPose, true); loadImagesAndRender()">c</button><span
-            id="spanPoses"></span><span id="spanPosesPosition" class="ui-level-0"></span><button id="btnPromptPose" class="ui-level-1" title="Generate with prompt">P</button><span id="spanPromptPose" class="ui-level-1" style="display:none;"> Prompt: <textarea id="inputPromptPose" rows="4" cols="80" placeholder="Describe pose edit...">Using the provided image of a man in a suit, give him a magic hat. Ensure the man's face and features remain completely unchanged. The background has to be #ff00ff.</textarea><button id="btnGeneratePose" title="Generate pose image">Generate</button> <label title="Apply chroma key to pose"><input id="chkPoseMask" type="checkbox" checked> Mask</label> <button id="btnPoseSample" title="Sample key color from borders of pose">Sample</button> Color: <input id="inputPoseKeyColor" type="color" value="#ff00ff"> Tol: <input id="inputPoseTolerance" type="range" min="-1" max="255" value="0"> Soft: <input id="inputPoseSoftness" type="range" min="-1" max="255" value="0"></span><input id="inputPoseURL" type="hidden" data-force-imageload /></div>
     <div class="ui-level-0"> Text1: <input id="inputText1" type="text"><span id="spanText1Position" class="ui-level-1"></span></div>
     <div class="ui-level-0">Text2: <input id="inputText2" type="text"><span id="spanText2Position" class="ui-level-1"></span></div>
     <div class="ui-level-1">Canvas color: <input id="inputCanvasColor" type="color" value="#000000"></div>
@@ -255,7 +258,8 @@
 
     const drawTextT = function (text, tid, x, y) {
         const w = ctx.measureText(text).width
-        const h = ctx.measureText(text).height
+        const m = ctx.measureText(text)
+        const h = (m.actualBoundingBoxAscent || 40) + (m.actualBoundingBoxDescent || 10)
         ctx.save();
         ctx.translate(x, y)
         ctx.translate(eId(`tf_${tid}_x`).value, eId(`tf_${tid}_y`).value)
@@ -264,8 +268,26 @@
         ctx.scale(eId(`tf_${tid}_s`).value * 0.01, eId(`tf_${tid}_s`).value * 0.01)
         ctx.scale(eId(`tf_${tid}_h`).checked ? -1 : 1, eId(`tf_${tid}_v`).checked ? -1 : 1)
         ctx.translate(-w / 2, -h / 2)
+        // Compute local offset by current align/baseline
+        let offX = 0, offY = 0
+        const ta = String(ctx.textAlign || '').toLowerCase()
+        if (ta === 'center') offX = -w / 2
+        else if (ta === 'end' || ta === 'right') offX = -w
+        else offX = 0
+        const tb = String(ctx.textBaseline || '').toLowerCase()
+        if (tb === 'bottom' || tb === 'ideographic') offY = -h
+        else if (tb === 'middle') offY = -h / 2
+        else offY = 0 // top/hanging/alphabetic approximated as top
         ctx.fillText(text, 0, 0)
         ctx.strokeText(text, 0, 0)
+        if (typeof selectedId !== 'undefined' && selectedId === tid) {
+            ctx.save()
+            ctx.strokeStyle = 'rgba(255,192,0,0.9)'
+            ctx.lineWidth = 2
+            ctx.setLineDash([8,4])
+            ctx.strokeRect(offX, offY, w, h)
+            ctx.restore()
+        }
         ctx.restore()
     }
 
@@ -279,6 +301,14 @@
         ctx.scale(eId(`tf_${tid}_h`).checked ? -1 : 1, eId(`tf_${tid}_v`).checked ? -1 : 1)
         if (!options?.tl) ctx.translate(-w / 2, -h / 2)
         ctx.drawImage(img, 0, 0, w, h);
+        if (typeof selectedId !== 'undefined' && selectedId === tid) {
+            ctx.save()
+            ctx.strokeStyle = 'rgba(255,192,0,0.9)'
+            ctx.lineWidth = 2
+            ctx.setLineDash([8,4])
+            ctx.strokeRect(0, 0, w, h)
+            ctx.restore()
+        }
         ctx.restore()
     }
 
@@ -910,6 +940,325 @@
         selectUiLevel.value = stored
         setUiLevel(stored)
     }
+
+    // --- Selection & Keyboard movement ---
+    var selectedId = ''
+    const clampNumberToRange = function(v, min, max){
+        const n = parseFloat(v)
+        const lo = parseFloat(min)
+        const hi = parseFloat(max)
+        return Math.max(lo, Math.min(hi, n))
+    }
+    const getTransformContainerById = function (id) {
+        if (!id) return null
+        if (id === inputBackgroundURL.id) return spanBackgroundPosition
+        if (id === inputPose.id) return spanPosesPosition
+        if (id === inputText1.id) return spanText1Position
+        if (id === inputText2.id) return spanText2Position
+        if (id === inputSecondURL.id) return spanSecondPosition
+        if (id === inputThirdURL.id) return spanThirdPosition
+        return null
+    }
+    const getSectionContainerById = function(id){
+        const sub = getTransformContainerById(id)
+        if (!sub) return null
+        // Highlight the whole section container (top-level div)
+        return sub.closest('div')
+    }
+    const clearSelectedUi = function(){
+        document.querySelectorAll('.selectedControl').forEach(function(el){ el.classList.remove('selectedControl') })
+        document.querySelectorAll('.selectedSection').forEach(function(el){ el.classList.remove('selectedSection') })
+    }
+    const setSelected = function(id){
+        selectedId = id || ''
+        clearSelectedUi()
+        const cont = getTransformContainerById(selectedId)
+        if (cont) { cont.classList.add('selectedControl') }
+        const sec = getSectionContainerById(selectedId)
+        if (sec) { sec.classList.add('selectedSection') }
+        render()
+    }
+    const toggleSelect = function(id){
+        if (!id) { setSelected(''); return }
+        if (selectedId === id) { setSelected('') } else { setSelected(id) }
+    }
+    const adjustSelected = function(dx, dy){
+        if (!selectedId) return
+        const ix = eId('tf_' + selectedId + '_x')
+        const iy = eId('tf_' + selectedId + '_y')
+        if (!ix || !iy) return
+        const stepx = dx
+        const stepy = dy
+        ix.value = clampNumberToRange(parseFloat(ix.value) + stepx, ix.min, ix.max)
+        iy.value = clampNumberToRange(parseFloat(iy.value) + stepy, iy.min, iy.max)
+        const nx = eId('tfn_' + selectedId + '_x')
+        const ny = eId('tfn_' + selectedId + '_y')
+        if (nx) nx.value = ix.value
+        if (ny) ny.value = iy.value
+        render()
+    }
+    const adjustRotationSelected = function(dRot){
+        if (!selectedId) return
+        const ir = eId('tf_' + selectedId + '_r')
+        if (!ir) return
+        ir.value = clampNumberToRange(parseFloat(ir.value) + dRot, ir.min, ir.max)
+        const nr = eId('tfn_' + selectedId + '_r')
+        if (nr) nr.value = ir.value
+        render()
+    }
+    const adjustScaleSelected = function(dScale){
+        if (!selectedId) return
+        const is = eId('tf_' + selectedId + '_s')
+        if (!is) return
+        is.value = clampNumberToRange(parseFloat(is.value) + dScale, is.min, is.max)
+        const ns = eId('tfn_' + selectedId + '_s')
+        if (ns) ns.value = is.value
+        render()
+    }
+    document.addEventListener('keydown', function(e){
+        const k = e.key
+        const moveStep = e.shiftKey ? 1 : 10
+        const rotStep = e.shiftKey ? 1 : 5
+        const sclStep = e.shiftKey ? 1 : 10
+        const ae = document.activeElement
+        if (ae && (ae.isContentEditable || (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT'))) { return }
+        if (k === '1') { toggleSelect(inputBackgroundURL.id); return }
+        if (k === '2') { toggleSelect(inputPose.id); return }
+        if (k === '3') { toggleSelect(inputSecondURL.id); return }
+        if (k === '4') { toggleSelect(inputThirdURL.id); return }
+        if (k === '5') { toggleSelect(inputText1.id); return }
+        if (k === '6') { toggleSelect(inputText2.id); return }
+        if (k >= '0' && k <= '9') { setSelected(''); return }
+        if (!selectedId) return
+        if (k === 'ArrowLeft') { e.preventDefault(); adjustSelected(-moveStep, 0); return }
+        if (k === 'ArrowRight') { e.preventDefault(); adjustSelected(moveStep, 0); return }
+        if (k === 'ArrowUp') { e.preventDefault(); adjustSelected(0, -moveStep); return }
+        if (k === 'ArrowDown') { e.preventDefault(); adjustSelected(0, moveStep); return }
+        // WASD
+        if (k === 'a' || k === 'A') { e.preventDefault(); adjustSelected(-moveStep, 0); return }
+        if (k === 'd' || k === 'D') { e.preventDefault(); adjustSelected(moveStep, 0); return }
+        if (k === 'w' || k === 'W') { e.preventDefault(); adjustSelected(0, -moveStep); return }
+        if (k === 's' || k === 'S') { e.preventDefault(); adjustSelected(0, moveStep); return }
+        // Rotation: Q/E
+        if (k === 'q' || k === 'Q') { e.preventDefault(); adjustRotationSelected(-rotStep); return }
+        if (k === 'e' || k === 'E') { e.preventDefault(); adjustRotationSelected(rotStep); return }
+        // Scale: +/- (support Numpad + and - as well)
+        if (k === '+' ) { e.preventDefault(); adjustScaleSelected(sclStep); return }
+        if (k === '-') { e.preventDefault(); adjustScaleSelected(-sclStep); return }
+        // Scale: R/F as alternative shortcuts
+        if (k === 'r' || k === 'R') { e.preventDefault(); adjustScaleSelected(sclStep); return }
+        if (k === 'f' || k === 'F') { e.preventDefault(); adjustScaleSelected(-sclStep); return }
+    })
+
+    // --- Canvas click selection (hit-testing and cycling front-to-back) ---
+    const getTextSize = function(text){
+        try {
+            ctx.save()
+            ctx.font = "64pt Impact"
+            const m = ctx.measureText(text)
+            const h = (m.actualBoundingBoxAscent || 40) + (m.actualBoundingBoxDescent || 10)
+            const w = m.width || 0
+            ctx.restore()
+            return { w: w, h: h }
+        } catch(e) {
+            return { w: 0, h: 80 }
+        }
+    }
+    const getLayersFrontToBack = function(){
+        const layers = []
+        // Front-most first in this list
+        // Text2
+        if (typeof inputText2 !== 'undefined') {
+            const s = getTextSize(inputText2.value)
+            layers.push({ kind:'text', id: inputText2.id, x: 50, y: canvas.height - 50, w: s.w, h: s.h, tl: false, align: 'start', baseline: 'bottom' })
+        }
+        // Text1
+        if (typeof inputText1 !== 'undefined') {
+            const s = getTextSize(inputText1.value)
+            layers.push({ kind:'text', id: inputText1.id, x: canvas.width - 50, y: canvas.height - 50, w: s.w, h: s.h, tl: false, align: 'end', baseline: 'bottom' })
+        }
+        // SecondImage
+        if (imgSecond) {
+            layers.push({ kind:'image', id: inputSecondURL.id, x: 0, y: 0, w: imgSecond.width, h: imgSecond.height, tl: true })
+        }
+        // Pose
+        if (imgPose) {
+            const w = imgPoseWidth
+            const source = (typeof chkPoseMask !== 'undefined' && chkPoseMask.checked && poseProcessedCanvas) ? poseProcessedCanvas : imgPose
+            const h = w * source.height / source.width
+            layers.push({ kind:'image', id: inputPose.id, x: canvas.width * 0.1, y: canvas.height * 0.3, w, h, tl: false })
+        }
+        // ThirdImage
+        if (imgThird) {
+            layers.push({ kind:'image', id: inputThirdURL.id, x: 0, y: 0, w: imgThird.width, h: imgThird.height, tl: false })
+        }
+        // Background
+        if (imgBackground) {
+            const w = Math.min(canvas.width, imgBackground.width)
+            const h = w * imgBackground.height / imgBackground.width
+            layers.push({ kind:'image', id: inputBackgroundURL.id, x: 0, y: 0, w, h, tl: false })
+        }
+        return layers
+    }
+    const getTransformForId = function(id){
+        const tx = parseFloat((eId('tf_' + id + '_x') || { value: 0 }).value || 0)
+        const ty = parseFloat((eId('tf_' + id + '_y') || { value: 0 }).value || 0)
+        const r = parseFloat((eId('tf_' + id + '_r') || { value: 0 }).value || 0)
+        const s = parseFloat((eId('tf_' + id + '_s') || { value: 100 }).value || 100) * 0.01
+        const fh = (eId('tf_' + id + '_h') || { checked: false }).checked ? -1 : 1
+        const fv = (eId('tf_' + id + '_v') || { checked: false }).checked ? -1 : 1
+        return { tx, ty, r, s, fh, fv }
+    }
+    const rotatePoint = function(pt, angleRad){
+        const c = Math.cos(angleRad), si = Math.sin(angleRad)
+        return { x: pt.x * c - pt.y * si, y: pt.x * si + pt.y * c }
+    }
+    const worldToLocal = function(px, py, desc){
+        // Inverse of forward chain:
+        // pW = Tdesc ∘ Ttf ∘ [T(+w/2,+h/2) if !tl] ∘ R ∘ S ∘ Flip ∘ [T(-w/2,-h/2) if !tl] (pL)
+        // pL = [T(+w/2,+h/2) if !tl]^{-1} ∘ Flip^{-1} ∘ S^{-1} ∘ R^{-1} ∘ [T(+w/2,+h/2) if !tl] ∘ Ttf^{-1} ∘ Tdesc^{-1} (pW)
+        let p = { x: px, y: py }
+        const tr = getTransformForId(desc.id)
+        // Undo outer translations first
+        p.x -= desc.x; p.y -= desc.y
+        p.x -= tr.tx; p.y -= tr.ty
+        if (!desc.tl) { p.x -= desc.w / 2; p.y -= desc.h / 2 }
+        // Undo rotation
+        p = rotatePoint(p, -tr.r * Math.PI / 180)
+        // Undo scale
+        if (tr.s !== 0) { p.x = p.x / tr.s; p.y = p.y / tr.s }
+        // Undo flips
+        p.x = p.x / tr.fh; p.y = p.y / tr.fv
+        if (!desc.tl) { p.x += desc.w / 2; p.y += desc.h / 2 }
+        return p
+    }
+    const isHit = function(px, py, desc){
+        let lp = worldToLocal(px, py, desc)
+        if (desc.kind === 'text') {
+            let offX = 0, offY = 0
+            if (desc.align === 'center') offX = -desc.w / 2
+            else if (desc.align === 'end' || desc.align === 'right') offX = -desc.w
+            else offX = 0
+            if (desc.baseline === 'bottom' || desc.baseline === 'ideographic') offY = -desc.h
+            else if (desc.baseline === 'middle') offY = -desc.h / 2
+            else offY = 0
+            lp = { x: lp.x - offX, y: lp.y - offY }
+        }
+        return lp.x >= 0 && lp.y >= 0 && lp.x <= desc.w && lp.y <= desc.h
+    }
+    let lastClickPos = null
+    const getCanvasXY = function(evt){
+        const rect = canvas.getBoundingClientRect()
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+        return {
+            x: (evt.clientX - rect.left) * scaleX,
+            y: (evt.clientY - rect.top) * scaleY
+        }
+    }
+    var dragState = null
+    canvas.addEventListener('mousedown', function(e){
+        const rect = canvas.getBoundingClientRect()
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+        const px = (e.clientX - rect.left) * scaleX
+        const py = (e.clientY - rect.top) * scaleY
+        const layers = getLayersFrontToBack()
+        const hits = []
+        for (let i = 0; i < layers.length; i++) {
+            const d = layers[i]
+            if (isHit(px, py, d)) { hits.push(d.id) }
+        }
+        if (e.button === 0) {
+            if (!hits.length) {
+                setSelected('')
+                lastClickPos = { x: px, y: py }
+                // still allow starting a drag move even with no selection
+            } else {
+                const same = lastClickPos && Math.abs(lastClickPos.x - px) < 3 && Math.abs(lastClickPos.y - py) < 3
+                let nextIdx = 0
+                if (same) {
+                    const currentIdx = hits.indexOf(selectedId)
+                    if (currentIdx >= 0) { nextIdx = (currentIdx + 1) % hits.length } else { nextIdx = 0 }
+                }
+                setSelected(hits[nextIdx])
+                lastClickPos = { x: px, y: py }
+            }
+        } else if ((e.button === 1 || e.button === 2) && !selectedId && hits.length) {
+            // If no selection, pick the topmost under cursor for MMB/RMB; otherwise keep selection
+            setSelected(hits[0])
+        }
+
+        // Start drag depending on mouse button
+        // 0: move, 2: rotate by y, 1: scale by y
+        let mode = 'move'
+        if (e.button === 2) mode = 'rotate'
+        if (e.button === 1) mode = 'scale'
+        dragState = { mode: mode, lastX: px, lastY: py }
+        e.preventDefault()
+    })
+    const handleDragMove = function(e){
+        if (!dragState || !selectedId) return
+        const p = getCanvasXY(e)
+        const dx = p.x - dragState.lastX
+        const dy = p.y - dragState.lastY
+        const fine = e.shiftKey ? 0.1 : 1
+        if (dragState.mode === 'move') {
+            adjustSelected(dx * fine, dy * fine)
+        } else if (dragState.mode === 'rotate') {
+            // Use both axes for smoother rotation control
+            const rotDelta = (dx + dy) * (e.shiftKey ? 0.1 : 0.5)
+            adjustRotationSelected(rotDelta)
+        } else if (dragState.mode === 'scale') {
+            adjustScaleSelected(-dy * (e.shiftKey ? 0.2 : 1))
+        }
+        dragState.lastX = p.x
+        dragState.lastY = p.y
+        e.preventDefault()
+    }
+    canvas.addEventListener('mousemove', handleDragMove)
+    document.addEventListener('mousemove', handleDragMove)
+    const endDrag = function(){ dragState = null }
+    canvas.addEventListener('mouseup', endDrag)
+    document.addEventListener('mouseup', endDrag)
+    canvas.addEventListener('mouseleave', function(){ /* keep dragging across document for RMB/MMB */ })
+    canvas.addEventListener('contextmenu', function(e){ e.preventDefault() })
+    // Mouse wheel zoom
+    canvas.addEventListener('wheel', function(e){
+        if (!selectedId) return
+        const factor = e.shiftKey ? 0.5 : 2
+        const delta = -Math.sign(e.deltaY) * factor * 5
+        adjustScaleSelected(delta)
+        e.preventDefault()
+    }, { passive: false })
+    // Touch support (single finger = move)
+    canvas.addEventListener('touchstart', function(e){
+        if (!e.touches || e.touches.length < 1) return
+        const t = e.touches[0]
+        const p = getCanvasXY(t)
+        dragState = { mode: 'move', lastX: p.x, lastY: p.y }
+        // Do a quick hit-test to select something under finger if not already selected
+        const layers = getLayersFrontToBack()
+        for (let i = 0; i < layers.length; i++) {
+            const d = layers[i]
+            if (isHit(p.x, p.y, d)) { setSelected(d.id); break }
+        }
+        e.preventDefault()
+    }, { passive: false })
+    canvas.addEventListener('touchmove', function(e){
+        if (!dragState || !selectedId || !e.touches || e.touches.length < 1) return
+        const t = e.touches[0]
+        const p = getCanvasXY(t)
+        const dx = p.x - dragState.lastX
+        const dy = p.y - dragState.lastY
+        adjustSelected(dx, dy)
+        dragState.lastX = p.x
+        dragState.lastY = p.y
+        e.preventDefault()
+    }, { passive: false })
+    canvas.addEventListener('touchend', function(){ dragState = null })
+    canvas.addEventListener('touchcancel', function(){ dragState = null })
+    // (Canvas focus gating removed)
 
     // download it
 
