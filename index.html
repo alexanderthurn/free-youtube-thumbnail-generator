@@ -33,15 +33,15 @@
     </div>
 
     <div class="ui-level-0"><a href="https://unsplash.com/s/photos/werte?license=free" target="unsplash">Background</a>: <input
-            id="inputBackgroundURL" type="text" size="50" data-force-imageload><input type="file"
+            id="inputBackgroundURL" type="text" size="10" data-force-imageload><input type="file"
             data-image-target="inputBackgroundURL" /><span id="spanBackgroundPosition" class="ui-level-1"></span><button id="btnPromptBackground" class="ui-level-0" title="Generate with prompt">P</button><span id="spanPromptBackground" class="ui-level-0" style="display:none;"> Prompt: <input id="inputPromptBackground" type="text" size="40" placeholder="Describe background..."><button id="btnGenerateBackground" title="Generate background image">Generate</button> <label title="Include Background as reference"><input id="chkBgBackground" type="checkbox"> Background</label> <label title="Include Pose as reference"><input id="chkBgPose" type="checkbox"> Pose</label> <label title="Include SecondImage as reference"><input id="chkBgSecond" type="checkbox"> SecondImage</label> <label title="Include ThirdImage as reference"><input id="chkBgThird" type="checkbox"> ThirdImage</label></span></div>
     <div class="ui-level-0">Pose: <input id="inputPose" step="1" type="number" min="0" max="30" data-force-imageload /><button
             title="chaos" onclick="inputPoseURL.value=''; if (typeof inputPoseKeyColor!=='undefined'){ inputPoseKeyColor.dataset.sampled=''; } randomizeInputByMinMax(inputPose, true); loadImagesAndRender()">c</button><span
             id="spanPoses"></span><span id="spanPosesPosition" class="ui-level-1"></span><button id="btnPromptPose" class="ui-level-0" title="Generate with prompt">P</button><span id="spanPromptPose" class="ui-level-1" style="display:none;"> Prompt: <textarea id="inputPromptPose" rows="4" cols="80" placeholder="Describe pose edit...">Using the provided image of a man in a suit, give him a magic hat. Ensure the man's face and features remain completely unchanged. The background has to be #ff00ff.</textarea><button id="btnGeneratePose" title="Generate pose image">Generate</button> <label title="Apply chroma key to pose"><input id="chkPoseMask" type="checkbox" checked> Mask</label> <button id="btnPoseSample" title="Sample key color from borders of pose">Sample</button> Color: <input id="inputPoseKeyColor" type="color" value="#ff00ff"> Tol: <input id="inputPoseTolerance" type="range" min="-1" max="255" value="0"> Soft: <input id="inputPoseSoftness" type="range" min="-1" max="255" value="0"></span><input id="inputPoseURL" type="hidden" data-force-imageload /></div>
     <div class="ui-level-1"><a href="https://library.techsmith.com/en/camtasia/assets/Graphic/Photo">SecondImage</a>: <input
-            id="inputSecondURL" type="text" size="50" data-force-imageload><input type="file"
+            id="inputSecondURL" type="text" size="10" data-force-imageload><input type="file"
             data-image-target="inputSecondURL" /><span id="spanSecondPosition"></span><button id="btnPromptSecond" title="Generate with prompt">P</button><span id="spanPromptSecond" style="display:none;"> Prompt: <input id="inputPromptSecond" type="text" size="40" placeholder="Describe second image..."><button id="btnGenerateSecond" title="Generate second image">Generate</button> <label title="Apply chroma key to SecondImage"><input id="chkSecondMask" type="checkbox" checked> Mask</label> <button id="btnSecondSample" title="Sample key color from borders of SecondImage">Sample</button> Color: <input id="inputSecondKeyColor" type="color" value="#ff00ff"> Tol: <input id="inputSecondTolerance" type="range" min="-1" max="255" value="0"> Soft: <input id="inputSecondSoftness" type="range" min="-1" max="255" value="0"></span></div>
-    <div class="ui-level-1">ThirdImage: <input id="inputThirdURL" type="text" size="50" data-force-imageload><input type="file"
+    <div class="ui-level-1">ThirdImage: <input id="inputThirdURL" type="text" size="10" data-force-imageload><input type="file"
             data-image-target="inputThirdURL" /><span id="spanThirdPosition"></span><button id="btnPromptThird" title="Generate with prompt">P</button><span id="spanPromptThird" style="display:none;"> Prompt: <input id="inputPromptThird" type="text" size="40" placeholder="Describe third image..."><button id="btnGenerateThird" title="Generate third image">Generate</button> <label title="Apply chroma key to ThirdImage"><input id="chkThirdMask" type="checkbox" checked> Mask</label> <button id="btnThirdSample" title="Sample key color from borders of ThirdImage">Sample</button> Color: <input id="inputThirdKeyColor" type="color" value="#ff00ff"> Tol: <input id="inputThirdTolerance" type="range" min="-1" max="255" value="0"> Soft: <input id="inputThirdSoftness" type="range" min="-1" max="255" value="0"></span></div>
     <div class="ui-level-0"> Text1: <input id="inputText1" type="text"><span id="spanText1Position" class="ui-level-1"></span></div>
     <div class="ui-level-0">Text2: <input id="inputText2" type="text"><span id="spanText2Position" class="ui-level-1"></span></div>
@@ -92,25 +92,73 @@
     var suspendPoseGeminiOnce = false
 
 
-    const saveToURL = function () {
-
-        const queryString = window.location.search;
-        const urlParams = new URLSearchParams(queryString);
-
+    const collectCurrentParams = function(){
+        const params = new URLSearchParams()
         document.querySelectorAll('input').forEach((input) => {
             if (input.type === 'file') {
-
+                // ignore file inputs
             } else if (input.type === 'checkbox') {
-                urlParams.set(input.id, input.checked)
+                params.set(input.id, input.checked)
             } else {
-                urlParams.set(input.id, input.value)
+                params.set(input.id, input.value)
             }
         })
+        return params
+    }
 
-
+    const saveToURL = function () {
+        const urlParams = collectCurrentParams()
         btnDeeplink.href = '?' + urlParams.toString()
-
         // window.location.search = urlParams.toString()
+    }
+
+    const buildDownloadFilename = function(){
+        // Short, file-safe summary using only core fields with abbreviated keys
+        const shortKeyMap = {
+            inputBackgroundURL: 'bg',
+            inputPose: 'p',
+            inputSecondURL: 's2',
+            inputThirdURL: 's3',
+            inputText1: 't1',
+            inputText2: 't2',
+            inputCanvasColor: 'cc'
+        }
+        const ids = Object.keys(shortKeyMap)
+        const getVal = id => {
+            const el = eId(id)
+            return el ? String(el.value || '') : ''
+        }
+        const shortenVal = function(id, v){
+            if (!v) return ''
+            // URLs → last segment or short prompt token
+            if (/^https?:\/\//i.test(v)) {
+                try {
+                    const u = new URL(v.indexOf('http')===0? v : v.replace(/^.*url=/,'').replace(/%2F/gi,'/'))
+                    const seg = (u.pathname.split('/').pop() || '').split('?')[0]
+                    return (seg || 'url').slice(0, 20)
+                } catch(e){ return 'url' }
+            }
+            if (/^gemini:\/\//i.test(v)) {
+                return ('gm_' + v.replace(/^gemini:\/\//i,'')).replace(/\W+/g,'_').slice(0, 20)
+            }
+            if (id === 'inputCanvasColor') {
+                return v.replace('#','')
+            }
+            // text/numbers
+            return v.replace(/\s+/g,'_').replace(/\W+/g,'_').slice(0, 20)
+        }
+        const parts = []
+        ids.forEach(function(id){
+            const val = getVal(id)
+            if (!val) return
+            const sk = shortKeyMap[id]
+            const sv = shortenVal(id, val)
+            if (sv) parts.push(sk + '-' + sv)
+        })
+        let base = parts.join('__') || 'img'
+        base = base.replace(/_+/g,'_').replace(/^_+|_+$/g,'')
+        if (base.length > 80) base = base.slice(0,80)
+        return base + '.jpg'
     }
 
     const loadFromURL = function () {
@@ -1263,12 +1311,15 @@
     // download it
 
     btnDownload.addEventListener('click', function (e) {
-        let canvasUrl = canvas.toDataURL('image/jpeg', 1.0);
-        const createEl = document.createElement('a');
-        createEl.href = canvasUrl;
-        createEl.download = "download-this-canvas";
-        createEl.click();
-        createEl.remove();
+        setSelected('')
+        render()
+        const canvasUrl = canvas.toDataURL('image/jpeg', 1.0)
+        const fileName = buildDownloadFilename()
+        const createEl = document.createElement('a')
+        createEl.href = canvasUrl
+        createEl.download = fileName
+        createEl.click()
+        createEl.remove()
     })
 
     // Deletion of generated assets (one-by-one)
