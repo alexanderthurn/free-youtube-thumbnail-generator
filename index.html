@@ -24,7 +24,7 @@
 
     <div><a href="https://unsplash.com/s/photos/werte?license=free" target="unsplash">Background</a>: <input
             id="inputBackgroundURL" type="text" size="50" data-force-imageload><input type="file"
-            data-image-target="inputBackgroundURL" /><span id="spanBackgroundPosition"></span><button id="btnPromptBackground" title="Generate with prompt">P</button><span id="spanPromptBackground" style="display:none;"> Prompt: <input id="inputPromptBackground" type="text" size="40" placeholder="Describe background..."><button id="btnGenerateBackground" title="Generate background image">Generate</button> <label title="Include Pose as reference"><input id="chkBgPose" type="checkbox"> Pose</label> <label title="Include SecondImage as reference"><input id="chkBgSecond" type="checkbox"> SecondImage</label> <label title="Include ThirdImage as reference"><input id="chkBgThird" type="checkbox"> ThirdImage</label></span></div>
+            data-image-target="inputBackgroundURL" /><span id="spanBackgroundPosition"></span><button id="btnPromptBackground" title="Generate with prompt">P</button><span id="spanPromptBackground" style="display:none;"> Prompt: <input id="inputPromptBackground" type="text" size="40" placeholder="Describe background..."><button id="btnGenerateBackground" title="Generate background image">Generate</button> <label title="Include Background as reference"><input id="chkBgBackground" type="checkbox"> Background</label> <label title="Include Pose as reference"><input id="chkBgPose" type="checkbox"> Pose</label> <label title="Include SecondImage as reference"><input id="chkBgSecond" type="checkbox"> SecondImage</label> <label title="Include ThirdImage as reference"><input id="chkBgThird" type="checkbox"> ThirdImage</label></span></div>
     <div><a href="https://library.techsmith.com/en/camtasia/assets/Graphic/Photo">SecondImage</a>: <input
             id="inputSecondURL" type="text" size="50" data-force-imageload><input type="file"
             data-image-target="inputSecondURL" /><span id="spanSecondPosition"></span><button id="btnPromptSecond" title="Generate with prompt">P</button><span id="spanPromptSecond" style="display:none;"> Prompt: <input id="inputPromptSecond" type="text" size="40" placeholder="Describe second image..."><button id="btnGenerateSecond" title="Generate second image">Generate</button></span></div>
@@ -453,7 +453,7 @@
         this.disabled = true
         this.textContent = '⏳'
 
-        // Build image.php request with refs: background (always first if available), then Pose, Second, Third
+        // Build image.php request with refs: Background (if checkbox), then Pose, Second, Third
         const wasBg = inputBackgroundURL.value
         const isBlob = s => (String(s || '').indexOf('blob:') === 0 || String(s || '').indexOf('blob22:') === 0)
         const toProxyUrl = s => {
@@ -467,10 +467,12 @@
 
         let finalUrl = './image.php?url=' + encodeURIComponent('gemini://' + prompt)
 
-        // Background ref (if available and not a local blob)
-        if (wasBg && !isBlob(wasBg)) {
-            const bgRef = toProxyUrl(wasBg)
-            if (bgRef) { finalUrl += '&ref_background=' + encodeURIComponent(bgRef) }
+        // Background ref (only when checkbox is checked); still proceed if not present
+        if (typeof chkBgBackground !== 'undefined' && chkBgBackground.checked) {
+            if (wasBg && !isBlob(wasBg)) {
+                const bgRef = toProxyUrl(wasBg)
+                if (bgRef) { finalUrl += '&ref_background=' + encodeURIComponent(bgRef) }
+            }
         }
 
         // Pose ref (optional)
