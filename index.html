@@ -603,8 +603,8 @@
 <input class=\"ui-level-2\" id="tfn_${id}_r" type="number" min="-360" max="360" value="0" step="1" title="rotation" oninput="eId('tf_${id}_r').value=this.value; render()"/>
 <input class="ui-level-2" title="mirror horizontal" type="checkbox" id="tf_${id}_h"/>
 <input class="ui-level-2" title="mirror vertical" type="checkbox" id="tf_${id}_v"/>
-<button class="ui-level-1" title="chaos" onclick="randomizeTransform('${id}')">c</button>
-<button class="ui-level-1" title="reset" onclick="resetTransform('${id}')">r</button>`
+<button class="ui-level-2" title="chaos" onclick="randomizeTransform('${id}')">c</button>
+<button class="ui-level-2" title="reset" onclick="resetTransform('${id}')">r</button>`
     }
 
     addTransformMenu(inputPose.id, spanPosesPosition)
@@ -694,7 +694,7 @@
             resultsListItems.innerHTML = list.map(function(r){
                 var dl = '<a class="btn" href="' + r.url + '" download>Download</a>'
                 var rs = r.json ? '<button class="btn" onclick="restoreResultSettings(\'' + r.json + '\')">Restore</button>' : ''
-                return '<span class="assetItem"><a href="' + r.url + '" target="_blank"><img src="' + r.thumb + '"></a>' + dl + ' ' + rs + '<button class="deleteBtn" title="Delete result" onclick="deleteGeneratedAsset(event,\'result\',\'' + r.url + '\')">×</button></span>'
+                return '<span class="assetItem"><a href="' + r.url + '" target="_blank"><img onclick="flashThumb(this)" src="' + r.thumb + '"></a>' + dl + ' ' + rs + '<button class="deleteBtn" title="Delete result" onclick="deleteGeneratedAsset(event,\'result\',\'' + r.url + '\')">×</button></span>'
             }).join("")
         }
         if (typeof btnShowAllResults !== 'undefined') {
