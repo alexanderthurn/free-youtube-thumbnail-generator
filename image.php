@@ -262,7 +262,15 @@ if ($isGemini) {
     $poseUrl = trim((string)get_param('pose', ''));
     $poseB64 = null;
     $poseMime = 'image/png';
-    if ($poseUrl !== '') {
+    $poseDataParam = get_param('pose_data', '');
+    $poseMimeParam = trim((string)get_param('pose_mime', ''));
+    if (is_string($poseDataParam) && $poseDataParam !== '') {
+        $raw = base64_decode($poseDataParam, true);
+        if ($raw !== false) {
+            $poseB64 = base64_encode($raw);
+            if ($poseMimeParam) { $poseMime = $poseMimeParam; }
+        }
+    } else if ($poseUrl !== '') {
         list($poseData, $detMime) = fetch_bytes_and_mime($poseUrl, $poseMime);
         if ($detMime) { $poseMime = $detMime; }
         if ($poseData !== null && $poseData !== false) {
@@ -307,7 +315,7 @@ if ($isGemini) {
 
     # Disk-Cache in img/gemini/<backgrounds|poses> mit Prompt im Dateinamen und Hash-Suffix
     $baseDir   = __DIR__ . '/img/gemini';
-    $isPoseGen = ($poseUrl !== '');
+    $isPoseGen = ($poseUrl !== '' || (is_string($poseDataParam) && $poseDataParam !== ''));
     $assetDir  = $baseDir . '/' . ($isPoseGen ? 'poses' : 'backgrounds');
     $thumbDir  = $baseDir . '/' . ($isPoseGen ? 'poses_thumbs' : 'backgrounds_thumbs');
     ensure_dir($assetDir);
@@ -365,9 +373,12 @@ if ($isGemini) {
     }
     $parts[] = [ 'text' => $prefixedPrompt ];
 
+    // Aspect ratio: allow override via param `ar`, fallback based on kind
+    $ar = trim((string)get_param('ar', ''));
+    if ($ar === '') { $ar = $isPoseGen ? '9:16' : '16:9'; }
     $payload = json_encode([
         'contents' => [[ 'parts' => $parts ]],
-        'generationConfig' => [ 'imageConfig' => [ 'aspectRatio' => ($isPoseGen ? '9:16' : '16:9') ] ]
+        'generationConfig' => [ 'imageConfig' => [ 'aspectRatio' => $ar ] ]
     ]);
 
     $ch = curl_init($endpoint);

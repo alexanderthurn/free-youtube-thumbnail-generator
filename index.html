@@ -201,6 +201,8 @@
 
     // One-time flag to avoid re-generating Pose when generating other images
     var suspendPoseGeminiOnce = false
+    // One-time override for pose reference when generating a new pose
+    var poseRefOverride = ''
 
 
     const collectCurrentParams = function(){
@@ -373,10 +375,13 @@
 			var finalUrl = e.url
 			if (finalUrl.indexOf('gemini://') === 0) {
 				if (e.id === inputPose.id) {
-					const poseImageUrl = 'img/poses/' + inputPose.value + '.png'
-					finalUrl = './image.php?url=' + encodeURIComponent(finalUrl) + '&pose=' + encodeURIComponent(poseImageUrl)
+					const poseImageUrl = poseRefOverride || ('img/poses/' + inputPose.value + '.png')
+					finalUrl = './image.php?url=' + encodeURIComponent(finalUrl) + '&pose=' + encodeURIComponent(poseImageUrl) + '&ar=' + encodeURIComponent('9:16')
+					poseRefOverride = ''
 				} else {
-					finalUrl = './image.php?url=' + encodeURIComponent(finalUrl)
+					let extra = ''
+					if (e.id === inputBackgroundURL.id || e.id === inputSecondURL.id || e.id === inputThirdURL.id) { extra = '&ar=' + encodeURIComponent('16:9') }
+					finalUrl = './image.php?url=' + encodeURIComponent(finalUrl) + extra
 				}
 			} else if (finalUrl.indexOf('unsplash.com') > -1 && finalUrl.indexOf('proxyoff') == -1) {
 				finalUrl = './image.php?url=' + encodeURIComponent(finalUrl)
@@ -881,6 +886,7 @@
 			try {
 				const fd = new FormData()
 				fd.append('url', 'gemini://' + prompt)
+				fd.append('ar', '16:9')
 				// Background ref
 				if (typeof chkBgBackground !== 'undefined' && chkBgBackground.checked && wasBg) {
 					const { base64, mime } = await fetchUrlAsBase64(wasBg)
@@ -928,7 +934,7 @@
 		}
 
 		// Fallback: GET with refs as URLs (older path)
-		let finalUrl = './image.php?url=' + encodeURIComponent('gemini://' + prompt)
+		let finalUrl = './image.php?url=' + encodeURIComponent('gemini://' + prompt) + '&ar=' + encodeURIComponent('16:9')
 		const toProxyUrl = ensureProxyUrl
 		if (typeof chkBgBackground !== 'undefined' && chkBgBackground.checked) {
 			if (wasBg) {
@@ -1239,25 +1245,43 @@
         })
     }
 
-	// Generate via Gemini for Pose (passes pose index to backend)
-    btnGeneratePose.addEventListener('click', function () {
+	// Generate via Gemini for Pose (embed current pose as base64)
+    btnGeneratePose.addEventListener('click', async function () {
         if (!ensureGeminiKeyOrEnv()) { return }
-		const prompt = inputPromptPose.value.trim()
-		if (!prompt) { return }
-		const previousText = this.textContent
-		this.disabled = true
-		this.textContent = '⏳'
-		inputPoseURL.value = 'gemini://' + prompt
-		loadImagesAndRender()
-			.then(() => {
-				this.disabled = false
-				this.textContent = previousText
-			})
-			.catch(() => {
-				this.disabled = false
-				this.textContent = previousText
-			})
-	})
+        const prompt = inputPromptPose.value.trim()
+        if (!prompt) { return }
+        const previousText = this.textContent
+        this.disabled = true
+        this.textContent = '⏳'
+        try {
+            // Determine current pose image (AI pose if selected, else base pose)
+            let poseRef = ''
+            if (inputPoseURL.value && inputPoseURL.value.indexOf('blob22:') !== 0) {
+                poseRef = ensureProxyUrl(inputPoseURL.value)
+            } else {
+                poseRef = 'img/poses/' + inputPose.value + '.png'
+            }
+            const { base64, mime } = await fetchUrlAsBase64(poseRef)
+            const fd = new FormData()
+            fd.append('url', 'gemini://' + prompt)
+            fd.append('pose_data', base64)
+            fd.append('pose_mime', mime)
+            fd.append('ar', '9:16')
+            const headers = {}
+            const k = getGeminiKey()
+            if (k) { headers['X-Gemini-API-Key'] = k }
+            const res = await fetch('./image.php', { method: 'POST', body: fd, headers })
+            const blob = await res.blob()
+            const objectUrl = URL.createObjectURL(blob)
+            inputPoseURL.value = objectUrl
+            await loadImagesAndRender()
+            this.disabled = false
+            this.textContent = previousText
+        } catch(e) {
+            this.disabled = false
+            this.textContent = previousText
+        }
+    })
 
 	// Clicking the pose input should revert to normal pose selection
 	if (typeof inputPose !== 'undefined') {
