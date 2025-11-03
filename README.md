@@ -11,12 +11,14 @@ The frontend is pure HTML5 Canvas (`index.html`). A tiny PHP helper (`image.php`
 - Proxying HTTPS image URLs (e.g., Unsplash) to avoid CORS and attach an API key when available
 
 ## Features
-- Background, SecondImage, ThirdImage inputs (URL or local file)
+- Background, Object1, Object2 inputs (URL or local file)
 - Pose picker with 28 built‑in thumbnails (`img/poses` and `img/poses_thumbs`)
 - Pose chroma‑key masking with color sampling, tolerance and softness controls
+- Two object layers (Object1, Object2) with optional masking
+- Pose can be modified by Gemini (uses the current pose as reference)
 - Two text lines with stylized rendering and transform controls per element
 - Per‑element transforms: x, y, scale, rotation, mirror horizontal/vertical
-- Prompt‑based generation buttons (P → Generate) for Background/Second/Third/Pose
+- Prompt‑based generation buttons (P → Generate) for Background/Object1/Object2/Pose
 - Deep link of current state via URL query string
 - One‑click "Download" to export the canvas as a JPEG
 
@@ -53,7 +55,7 @@ UNSPLASH_CLIENT_ID=your_unsplash_client_id
 ## How to use
 1. Open `index.html` in your browser (via the local PHP server).
 2. Choose sources:
-   - Background/SecondImage/ThirdImage: paste an HTTPS URL or pick a local file.
+   - Background/Object1/Object2: paste an HTTPS URL or pick a local file.
    - Click the small "P" button to reveal a prompt field, then press "Generate" to create an image via Gemini.
    - Pose: pick an index (0–27). Optionally enter a prompt to generate a new pose based on the current pose image.
 3. Adjust transforms for each element (x/y/scale/rotation/mirror) using the sliders next to each input.
@@ -74,8 +76,8 @@ UNSPLASH_CLIENT_ID=your_unsplash_client_id
   - **2**: Pose
   - **3**: Text1
   - **4**: Text2
-  - **5**: SecondImage
-  - **6**: ThirdImage
+  - **5**: Object1
+  - **6**: Object2
   - **0 / 7 / 8 / 9**: Clear selection
 - **Move**
   - **Arrow keys** or **W/A/S/D**: Move selected element
