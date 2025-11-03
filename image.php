@@ -1,8 +1,9 @@
 <?php
 
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+ini_set('log_errors', 1);
 
 # --- Helpers ---
 function ensure_dir($dir) {
@@ -40,6 +41,66 @@ function write_png_thumbnail($binary, $targetPath, $maxWidth = 256) {
 }
 
 /**
+ * Emit a PNG image that visually shows an error message so the frontend can display it.
+ * This avoids broken images and surfaces backend issues directly on the canvas.
+ */
+function output_error_image($message, $statusCode = 500) {
+    // Fallback if GD is unavailable: send plain text with image content-type
+    $safeMsg = trim((string)$message);
+    if (!function_exists('imagecreatetruecolor')) {
+        // Always respond 200 to avoid proxy/CDN interferences (Cloudflare, etc.)
+        http_response_code(200);
+        header('Content-Type: image/png');
+        header('Cache-Control: no-store, max-age=0');
+        header('X-App-Error: 1');
+        header('X-App-Error-Status: ' . (int)$statusCode);
+        header('X-App-Error-Message: ' . substr(preg_replace('/\s+/', ' ', $safeMsg), 0, 512));
+        echo $safeMsg; // best effort
+        exit;
+    }
+
+    // Canvas size and colors (match app theme: black bg, yellow text)
+    $w = 1024; $h = 512;
+    $im = imagecreatetruecolor($w, $h);
+    imagealphablending($im, true);
+    imagesavealpha($im, true);
+    $bg = imagecolorallocate($im, 0, 0, 0);
+    $fg = imagecolorallocate($im, 255, 192, 0);
+    $muted = imagecolorallocate($im, 160, 160, 160);
+    imagefilledrectangle($im, 0, 0, $w, $h, $bg);
+
+    // Word-wrap to readable lines
+    $title = 'Error';
+    $body = $safeMsg;
+    $lines = [];
+    $titleWrap = wordwrap($title, 70, "\n");
+    $bodyWrap = wordwrap($body, 70, "\n");
+    $lines = array_merge(explode("\n", $titleWrap), [''], explode("\n", $bodyWrap));
+
+    // Draw text using built-in font
+    $x = 24; $y = 24; $lineH = 18;
+    imagestring($im, 5, $x, $y, 'Image Service', $muted); $y += $lineH + 6;
+    foreach ($lines as $idx => $ln) {
+        $color = ($idx === 0) ? $fg : $fg;
+        imagestring($im, ($idx === 0 ? 5 : 3), $x, $y, $ln, $color);
+        $y += ($idx === 0 ? $lineH + 4 : $lineH);
+        if ($y > $h - 24) { break; }
+    }
+
+    // Output PNG (always 200 OK). Attach app-specific error headers for debugging.
+    http_response_code(200);
+    header('Content-Type: image/png');
+    header('Cache-Control: no-store, max-age=0');
+    header('X-App-Error: 1');
+    header('X-App-Error-Status: ' . (int)$statusCode);
+    header('X-App-Error-Message: ' . substr(preg_replace('/\s+/', ' ', $safeMsg), 0, 512));
+    ob_clean();
+    imagepng($im);
+    imagedestroy($im);
+    exit;
+}
+
+/**
  * Fetch bytes and detected mime type from a source that can be:
  * - http(s) URL
  * - internal image.php URL (relative path)
@@ -57,6 +118,10 @@ function fetch_bytes_and_mime($url, $defaultMime = 'image/png') {
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_TIMEOUT => 20,
+            CURLOPT_HTTPHEADER => [
+                'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8'
+            ],
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
         ]);
         $data = curl_exec($ch);
         if ($data !== false) {
@@ -69,15 +134,25 @@ function fetch_bytes_and_mime($url, $defaultMime = 'image/png') {
 
     // Internal image.php URL (relative)
     if (preg_match('#^(?:\./)?image\.php\?#i', $url) || preg_match('#^image\.php\?#i', $url)) {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        // Respect subdirectory deployments (e.g., /yout-thu/) when constructing absolute URLs
+        $scheme = 'http';
+        if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO'])) { $scheme = $_SERVER['HTTP_X_FORWARDED_PROTO']; }
+        else if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') { $scheme = 'https'; }
         $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '127.0.0.1';
-        $absolute = $scheme . '://' . $host . '/' . ltrim(preg_replace('#^\./#', '', $url), '/');
+        $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '/image.php';
+        $basePath = rtrim(str_replace('\\','/', dirname($scriptName)), '/'); // e.g., /yout-thu
+        $rel = ltrim(preg_replace('#^\./#', '', $url), '/'); // image.php?...
+        $absolute = $scheme . '://' . $host . ($basePath ? $basePath : '') . '/' . $rel;
         $ch = curl_init($absolute);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTPHEADER => [
+                'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8'
+            ],
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
         ]);
         $data = curl_exec($ch);
         if ($data !== false) {
@@ -88,10 +163,19 @@ function fetch_bytes_and_mime($url, $defaultMime = 'image/png') {
         return [$data, $mime];
     }
 
-    // Local file path
+    // Local file path (supports both relative like img/.. and absolute web paths like /yout-thu/img/...)
     $localPath = $url;
     if (strpos($localPath, '/') !== 0) {
+        // relative web path → filesystem path under this script directory
         $localPath = __DIR__ . '/' . $localPath;
+    } else {
+        // absolute web path → map from web base (/subdir) to filesystem (this dir)
+        $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '/image.php';
+        $basePath = rtrim(str_replace('\\','/', dirname($scriptName)), '/'); // e.g., /yout-thu
+        if ($basePath !== '' && strpos($localPath, $basePath . '/') === 0) {
+            $relative = ltrim(substr($localPath, strlen($basePath)), '/');
+            $localPath = __DIR__ . '/' . $relative;
+        }
     }
     if (is_readable($localPath)) {
         $data = @file_get_contents($localPath);
@@ -103,14 +187,14 @@ function fetch_bytes_and_mime($url, $defaultMime = 'image/png') {
 
 # --- Eingabe prüfen: https?:// (Proxy) ODER gemini://<prompt> (Generierung) ---
 if (!isset($_GET['url'])) {
-    header('HTTP/1.1 404 Not Found'); exit;
+    output_error_image('Missing required parameter: url', 400);
 }
 $rawUrl = $_GET['url'];
 $isHttps = (preg_match('#^https?://#i', $rawUrl) === 1);
 $isGemini = (preg_match('#^gemini://#i', $rawUrl) === 1);
 
 if (!$isHttps && !$isGemini) {
-    header('HTTP/1.1 404 Not Found'); exit;
+    output_error_image('Invalid url scheme. Expected https:// or gemini://', 400);
 }
 
 # --- .env laden (KEY=VALUE pro Zeile) ---
@@ -136,7 +220,7 @@ if (is_readable($envPath)) {
 # --- Branch: GEMINI Bildgenerierung ---
 if ($isGemini) {
     $apiKey = isset($env['GEMINI_API_KEY']) ? $env['GEMINI_API_KEY'] : getenv('GEMINI_API_KEY');
-    if (empty($apiKey)) { header('HTTP/1.1 500 Internal Server Error'); echo 'Missing GEMINI_API_KEY'; exit; }
+    if (empty($apiKey)) { output_error_image('Missing GEMINI_API_KEY. Define it in .env or environment.', 500); }
 
     # Prompt aus gemini://... extrahieren (URL-encodiertes Query-Value wird hier nochmals decodiert)
     $prompt = preg_replace('#^gemini://#i', '', $rawUrl);
@@ -162,6 +246,10 @@ if ($isGemini) {
         if ($val === '') { continue; }
         list($bytes, $mime) = fetch_bytes_and_mime($val, 'image/png');
         if ($bytes !== null && $bytes !== false) {
+            // Only pass through image/* content; if HTML (e.g., a 404), fail fast with a clear message
+            if (!preg_match('#^image/#i', (string)$mime)) {
+                output_error_image('Reference "' . $rk . '" is not an image (Content-Type: ' . (string)$mime . '). Check base path and URLs.', 400);
+            }
             $refInlineParts[] = [
                 'inline_data' => [
                     'mime_type' => $mime,
@@ -249,7 +337,10 @@ if ($isGemini) {
     ]);
     $resp = curl_exec($ch);
     if ($resp === false) {
-        header('HTTP/1.1 502 Bad Gateway'); echo 'cURL error: ' . curl_error($ch); curl_close($ch); exit;
+        $err = curl_error($ch);
+        error_log('Gemini request failed: ' . $err);
+        curl_close($ch);
+        output_error_image('Gemini request failed: ' . $err, 502);
     }
     curl_close($ch);
 
@@ -264,10 +355,19 @@ if ($isGemini) {
             }
         }
     }
-    if (!$b64) { header('HTTP/1.1 502 Bad Gateway'); echo 'No image data from Gemini'; exit; }
+    if (!$b64) {
+        $hint = '';
+        if (isset($json['error'])) {
+            $hint = json_encode($json['error']);
+        } elseif (is_string($resp)) {
+            $hint = substr($resp, 0, 400);
+        }
+        error_log('Gemini no image data. Response hint: ' . $hint);
+        output_error_image('No image data from Gemini. ' . $hint, 502);
+    }
 
     $bin = base64_decode($b64, true);
-    if ($bin === false) { header('HTTP/1.1 502 Bad Gateway'); echo 'Invalid base64'; exit; }
+    if ($bin === false) { output_error_image('Invalid base64 in Gemini response', 502); }
 
     # In Cache schreiben, Thumbnail erzeugen und als PNG ausliefern
     @file_put_contents($cacheFile, $bin);
@@ -313,7 +413,12 @@ if ($version !== false && ($version['features'] & CURL_VERSION_SSL)) {
 }
 
 $response = curl_exec($ch);
-if ($response === false) { header('HTTP/1.1 502 Bad Gateway'); echo 'cURL error: ' . curl_error($ch); curl_close($ch); exit; }
+if ($response === false) {
+    $err = curl_error($ch);
+    error_log('Proxy cURL error: ' . $err);
+    curl_close($ch);
+    output_error_image('Proxy request failed: ' . $err, 502);
+}
 $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 curl_close($ch);
 
@@ -332,11 +437,11 @@ foreach ($header_array as $header_value) {
 if (array_key_exists('content-type', $headers)) {
     $ct = $headers['content-type'];
     if (preg_match('#image/png|image/.*icon|image/jpe?g|image/gif|image/webp|image/svg\+xml#i', $ct) !== 1) {
-        header('HTTP/1.1 404 Not Found'); exit;
+        output_error_image('Upstream returned non-image content-type: ' . $ct, 404);
     }
     header('Content-Type: ' . $ct);
 } else {
-    header('HTTP/1.1 404 Not Found'); exit;
+    output_error_image('Upstream response missing content-type header', 404);
 }
 
 if (array_key_exists('content-length', $headers))
