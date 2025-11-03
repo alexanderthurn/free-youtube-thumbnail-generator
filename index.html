@@ -49,7 +49,7 @@
                 <div class="prompt-label">Gemini AI</div>
                 <textarea id="inputPromptBackground" rows="5" class="prompt-textarea" placeholder="Describe background..."></textarea>
                 <button id="btnGenerateBackground" title="Generate background image">Generate</button>
-                <label class="ui-level-1" title="Include Background as reference"><input id="chkBgBackground" type="checkbox"> Background</label> <label class="ui-level-1" title="Include Pose as reference"><input id="chkBgPose" type="checkbox"> Pose</label> <label class="ui-level-1" title="Include SecondImage as reference"><input id="chkBgSecond" type="checkbox"> SecondImage</label> <label class="ui-level-1" title="Include ThirdImage as reference"><input id="chkBgThird" type="checkbox"> ThirdImage</label>
+                <label class="ui-level-1" title="Include Background as reference"><input id="chkBgBackground" type="checkbox"> Background</label> <label class="ui-level-1" title="Include Pose as reference"><input id="chkBgPose" type="checkbox"> Pose</label> <label class="ui-level-1" title="Include Object1 as reference"><input id="chkBgSecond" type="checkbox"> Object1</label> <label class="ui-level-1" title="Include Object2 as reference"><input id="chkBgThird" type="checkbox"> Object2</label>
                 </span></div>
     </section>
 
@@ -71,20 +71,20 @@
     </section>
 
     <section class="panel glass ui-level-1" id="card-second">
-        <div class="ui-level-1"><a href="https://library.techsmith.com/en/camtasia/assets/Graphic/Photo">Image1</a>: <input
+        <div class="ui-level-1"><a href="https://library.techsmith.com/en/camtasia/assets/Graphic/Photo">Object1</a>: <input
                 id="inputSecondURL" type="text" size="10" data-force-imageload><input type="file"
                 data-image-target="inputSecondURL" /><span id="spanSecondPosition"></span><button id="btnPromptSecond" title="Generate with prompt">AI</button><span id="spanPromptSecond" style="display:none;">
                 <div class="prompt-label">Gemini AI</div>
                 <textarea id="inputPromptSecond" rows="4" class="prompt-textarea" placeholder="Describe second image...">A cute panda. The background has to be #ff00ff.</textarea>
-                <button id="btnGenerateSecond" title="Generate second image">Generate</button> <label title="Apply chroma key to SecondImage"><input id="chkSecondMask" type="checkbox" checked> Mask</label> <button id="btnSecondSample" title="Sample key color from borders of SecondImage">Sample</button> Color: <input id="inputSecondKeyColor" type="color" value="#ff00ff"> Tolerance: <input id="inputSecondTolerance" type="range" min="-1" max="255" value="0"> <br>Softness: <input id="inputSecondSoftness" type="range" min="-1" max="255" value="0"></span></div>
+                <button id="btnGenerateSecond" title="Generate second image">Generate</button> <label title="Apply chroma key to Object1"><input id="chkSecondMask" type="checkbox" checked> Mask</label> <button id="btnSecondSample" title="Sample key color from borders of Object1">Sample</button> Color: <input id="inputSecondKeyColor" type="color" value="#ff00ff"> Tolerance: <input id="inputSecondTolerance" type="range" min="-1" max="255" value="0"> <br>Softness: <input id="inputSecondSoftness" type="range" min="-1" max="255" value="0"></span></div>
     </section>
 
     <section class="panel glass ui-level-1" id="card-third">
-        <div class="ui-level-1">Image2: <input id="inputThirdURL" type="text" size="10" data-force-imageload><input type="file"
+        <div class="ui-level-1">Object2: <input id="inputThirdURL" type="text" size="10" data-force-imageload><input type="file"
                 data-image-target="inputThirdURL" /><span id="spanThirdPosition"></span><button id="btnPromptThird" title="Generate with prompt">AI</button><span id="spanPromptThird" style="display:none;">
                 <div class="prompt-label">Gemini AI</div>
                 <textarea id="inputPromptThird" rows="4" class="prompt-textarea" placeholder="Describe third image...">A mighty eagle.The background has to be #ff00ff.</textarea>
-                <button id="btnGenerateThird" title="Generate third image">Generate</button> <label title="Apply chroma key to ThirdImage"><input id="chkThirdMask" type="checkbox" checked> Mask</label> <button id="btnThirdSample" title="Sample key color from borders of ThirdImage">Sample</button> Color: <input id="inputThirdKeyColor" type="color" value="#ff00ff"> Tolerance: <input id="inputThirdTolerance" type="range" min="-1" max="255" value="0"> <br>Softness: <input id="inputThirdSoftness" type="range" min="-1" max="255" value="0"></span></div>
+                <button id="btnGenerateThird" title="Generate third image">Generate</button> <label title="Apply chroma key to Object2"><input id="chkThirdMask" type="checkbox" checked> Mask</label> <button id="btnThirdSample" title="Sample key color from borders of Object2">Sample</button> Color: <input id="inputThirdKeyColor" type="color" value="#ff00ff"> Tolerance: <input id="inputThirdTolerance" type="range" min="-1" max="255" value="0"> <br>Softness: <input id="inputThirdSoftness" type="range" min="-1" max="255" value="0"></span></div>
     </section>
 
     <section class="panel glass" id="card-canvascolor">
@@ -781,7 +781,7 @@
         var list = showAllGeneratedObjects ? generatedObjectsData : generatedObjectsData.slice(0, THUMBS_PAGE_SIZE)
         if (typeof generatedObjectListItems !== 'undefined') {
             var html = list.map(function(g){
-                var sendToThirdBtn = '<button class="assetBtn assetBtn--send" title="Send to Image2" onclick="event.stopPropagation(); inputThirdURL.value=\'' + g.url + '\'; loadImagesAndRender()">→2</button>'
+                var sendToThirdBtn = '<button class="assetBtn assetBtn--send" title="Send to Object2" onclick="event.stopPropagation(); inputThirdURL.value=\'' + g.url + '\'; loadImagesAndRender()">→2</button>'
                 return "<span class=\"assetItem\"><img class=\"thumb\" title=\"" + escapeHtml(g.prompt) + "\" onclick=\"inputSecondURL.value='" + g.url + "';loadImagesAndRender();flashThumb(this)\" src=\"" + g.thumb + "\">" + sendToThirdBtn + "<button class=\"deleteBtn\" title=\"Delete object\" onclick=\"deleteGeneratedAsset(event,'object','" + g.url + "')\">×</button></span>"
             }).join("")
             if (!showAllGeneratedObjects && generatedObjectsData.length > THUMBS_PAGE_SIZE) {
@@ -895,7 +895,7 @@
     }
     initTabs()
 
-    // Toggle visibility of prompt inputs for Background and SecondImage
+    // Toggle visibility of prompt inputs for Background and Object1
     btnPromptBackground.addEventListener('click', function () {
         spanPromptBackground.style.display = (spanPromptBackground.style.display === 'none' || !spanPromptBackground.style.display) ? 'inline' : 'none'
     })
@@ -1008,7 +1008,8 @@
 				const objectUrl = URL.createObjectURL(blob)
 				inputBackgroundURL.value = objectUrl
 				suspendPoseGeminiOnce = true
-				await loadImagesAndRender()
+                await loadImagesAndRender()
+                try { populateAssetLists() } catch(e) {}
 				this.disabled = false
 				this.textContent = previousText
 				suspendPoseGeminiOnce = false
@@ -1046,11 +1047,12 @@
         }
 		inputBackgroundURL.value = finalUrl
 		suspendPoseGeminiOnce = true
-		loadImagesAndRender()
+        loadImagesAndRender()
 			.then(() => {
 				suspendPoseGeminiOnce = false
 				this.disabled = false
-				this.textContent = previousText
+                this.textContent = previousText
+                try { populateAssetLists() } catch(e) {}
 			})
 			.catch(() => {
 				suspendPoseGeminiOnce = false
@@ -1059,7 +1061,7 @@
 			})
 	})
 
-    // Generate via Gemini for SecondImage
+    // Generate via Gemini for Object1
     btnGenerateSecond.addEventListener('click', function () {
         if (!ensureGeminiKeyOrEnv()) { return }
 		const prompt = inputPromptSecond.value.trim()
@@ -1069,11 +1071,12 @@
 		this.textContent = '⏳'
         inputSecondURL.value = 'gemini://' + prompt
 		suspendPoseGeminiOnce = true
-		loadImagesAndRender()
+        loadImagesAndRender()
 			.then(() => {
 				suspendPoseGeminiOnce = false
 				this.disabled = false
-				this.textContent = previousText
+                this.textContent = previousText
+                try { populateAssetLists() } catch(e) {}
 			})
 			.catch(() => {
 				suspendPoseGeminiOnce = false
@@ -1082,7 +1085,7 @@
 			})
 	})
 
-    // Generate via Gemini for ThirdImage
+    // Generate via Gemini for Object2
     btnGenerateThird.addEventListener('click', function () {
         if (!ensureGeminiKeyOrEnv()) { return }
 		const prompt = inputPromptThird.value.trim()
@@ -1092,11 +1095,12 @@
 		this.textContent = '⏳'
         inputThirdURL.value = 'gemini://' + prompt
 		suspendPoseGeminiOnce = true
-		loadImagesAndRender()
+        loadImagesAndRender()
 			.then(() => {
 				suspendPoseGeminiOnce = false
 				this.disabled = false
-				this.textContent = previousText
+                this.textContent = previousText
+                try { populateAssetLists() } catch(e) {}
 			})
 			.catch(() => {
 				suspendPoseGeminiOnce = false
@@ -1364,6 +1368,7 @@
             const objectUrl = URL.createObjectURL(blob)
             inputPoseURL.value = objectUrl
             await loadImagesAndRender()
+            try { populateAssetLists() } catch(e) {}
             this.disabled = false
             this.textContent = previousText
         } catch(e) {
@@ -1568,7 +1573,7 @@
             const s = getTextSize(inputText2.value)
             layers.push({ kind:'text', id: inputText2.id, x: canvas.width - 50, y: canvas.height - 50, w: s.w, h: s.h, tl: false, align: 'end', baseline: 'bottom' })
         }
-        // SecondImage
+        // Object1
         if (imgSecond) {
             layers.push({ kind:'image', id: inputSecondURL.id, x: 0, y: 0, w: imgSecond.width, h: imgSecond.height, tl: true })
         }
@@ -1579,7 +1584,7 @@
             const h = w * source.height / source.width
             layers.push({ kind:'image', id: inputPose.id, x: canvas.width * 0.1, y: canvas.height * 0.3, w, h, tl: false })
         }
-        // ThirdImage
+        // Object2
         if (imgThird) {
             layers.push({ kind:'image', id: inputThirdURL.id, x: 0, y: 0, w: imgThird.width, h: imgThird.height, tl: false })
         }
