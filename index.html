@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Youtube Thumbnail Generator</title>
+    <title>Free Youtube Thumbnail Generator</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         img {
@@ -33,7 +33,7 @@
             <img class="topbar__logo" src="img/logo.svg" alt="Werteherren" />
         </div>
         <div class="topbar__right">
-            <span class="topbar__title">Youtube Thumbnail Generator</span>
+            <span class="topbar__title">Free Youtube Thumbnail Generator</span>
         </div>
     </header>
     <main class="layout">
@@ -84,7 +84,16 @@
     </section>
 
     <section class="panel glass" id="card-canvascolor">
-        <div class="ui-level-0">Canvas color: <input id="inputCanvasColor" type="color" value="#000000"></div>
+        <div class="ui-level-0">Canvas color: <input id="inputCanvasColor" type="color" value="#000000"> <span class="color-swatches">
+            <button class="swatch" title="Brand" style="--c:#ffc000; background: var(--c);" onclick="inputCanvasColor.value='#ffc000'; render()" aria-label="Brand color"></button>
+            <button class="swatch" title="Pink" style="--c:#ff00ff; background: var(--c);" onclick="inputCanvasColor.value='#ff00ff'; render()" aria-label="Pink"></button>
+            <button class="swatch" title="Cyan" style="--c:#00ffff; background: var(--c);" onclick="inputCanvasColor.value='#00ffff'; render()" aria-label="Cyan"></button>
+            <button class="swatch" title="Lime" style="--c:#39ff14; background: var(--c);" onclick="inputCanvasColor.value='#39ff14'; render()" aria-label="Lime"></button>
+            <button class="swatch" title="Red" style="--c:#ff0000; background: var(--c);" onclick="inputCanvasColor.value='#ff0000'; render()" aria-label="Red"></button>
+            <button class="swatch" title="Violet" style="--c:#7f00ff; background: var(--c);" onclick="inputCanvasColor.value='#7f00ff'; render()" aria-label="Violet"></button>
+            <button class="swatch" title="Black" style="--c:#000000; background: var(--c);" onclick="inputCanvasColor.value='#000000'; render()" aria-label="Black"></button>
+            <button class="swatch" title="White" style="--c:#ffffff; background: var(--c);" onclick="inputCanvasColor.value='#ffffff'; render()" aria-label="White"></button>
+        </span></div>
     </section>
 
     
@@ -121,7 +130,7 @@
     <footer class="footer">
         <div class="footer__left">
             <span>by Alexander Thurn - Open source</span>
-            <a href="https://github.com/alexanderthurn/youtube-thumbnail-generator" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://github.com/alexanderthurn/free-youtube-thumbnail-generator" target="_blank" rel="noopener">GitHub</a>
         </div>
         <div class="footer__right">
             <label class="ui-level-2"><input type="checkbox" id="toggleReducedMotion"> Reduced motion</label>
@@ -143,8 +152,8 @@
     const urlBackground = ''
     const urlAB = ''
 
-    inputText1.value = 'Welt'
-    inputText2.value = 'Hallo'
+    inputText1.value = 'Hallo'
+    inputText2.value = 'Welt'
     inputPose.value = Math.floor(Math.random() * posesCount)
 
     var imgBackground = null
@@ -350,16 +359,15 @@
         ctx.font = "64pt Impact"
         ctx.strokeStyle = 'black'
         ctx.lineWidth = 4
-        ctx.textAlign = "end"
+        ctx.textAlign = "start"
         ctx.textBaseline = "bottom"
-        ctx.fillStyle = colorBrand //<======= here
-        // Disable glow/shadow for solid style
+        ctx.fillStyle = 'black' 
         ctx.shadowColor = "transparent";
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;
 
-        drawTextT(inputText1.value, inputText1.id, canvas.width - 50, canvas.height - 50)
+        drawTextT(inputText1.value, inputText1.id, 50, canvas.height - 50)
         ctx.restore()
     }
 
@@ -369,16 +377,16 @@
         ctx.font = "64pt Impact"
         ctx.strokeStyle = 'black'
         ctx.lineWidth = 4
-        ctx.textAlign = "start"
+        ctx.textAlign = "end"
         ctx.textBaseline = "bottom"
-        ctx.fillStyle = 'black' //<======= here
+        ctx.fillStyle = colorBrand //<======= swapped: Text2 uses right/brand style
         // Disable glow/shadow for solid style
         ctx.shadowColor = "transparent";
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;
 
-        drawTextT(inputText2.value, inputText2.id, 50, canvas.height - 50)
+        drawTextT(inputText2.value, inputText2.id, canvas.width - 50, canvas.height - 50)
 
         ctx.restore()
     }
@@ -418,8 +426,8 @@
         if (tb === 'bottom' || tb === 'ideographic') offY = -h
         else if (tb === 'middle') offY = -h / 2
         else offY = 0 // top/hanging/alphabetic approximated as top
-        // Draw solid background for Text1 (black) and Text2 (brand yellow) with border
-        const bgColor = (tid === inputText1.id) ? 'black' : (tid === inputText2.id ? colorBrand : '')
+        // Draw solid background for Text1 (brand yellow) and Text2 (black)
+        const bgColor = (tid === inputText1.id) ? colorBrand : (tid === inputText2.id ? 'black' : '')
         const manualFontOffsetY = 11;
         const padX = 12, padY = 12
         if (bgColor) {
@@ -1320,15 +1328,15 @@
     const getLayersFrontToBack = function(){
         const layers = []
         // Front-most first in this list
-        // Text2
-        if (typeof inputText2 !== 'undefined') {
-            const s = getTextSize(inputText2.value)
-            layers.push({ kind:'text', id: inputText2.id, x: 50, y: canvas.height - 50, w: s.w, h: s.h, tl: false, align: 'start', baseline: 'bottom' })
-        }
-        // Text1
+        // Text1 (now left/start)
         if (typeof inputText1 !== 'undefined') {
             const s = getTextSize(inputText1.value)
-            layers.push({ kind:'text', id: inputText1.id, x: canvas.width - 50, y: canvas.height - 50, w: s.w, h: s.h, tl: false, align: 'end', baseline: 'bottom' })
+            layers.push({ kind:'text', id: inputText1.id, x: 50, y: canvas.height - 50, w: s.w, h: s.h, tl: false, align: 'start', baseline: 'bottom' })
+        }
+        // Text2 (now right/end)
+        if (typeof inputText2 !== 'undefined') {
+            const s = getTextSize(inputText2.value)
+            layers.push({ kind:'text', id: inputText2.id, x: canvas.width - 50, y: canvas.height - 50, w: s.w, h: s.h, tl: false, align: 'end', baseline: 'bottom' })
         }
         // SecondImage
         if (imgSecond) {
@@ -1476,6 +1484,76 @@
     document.addEventListener('mouseup', endDrag)
     canvas.addEventListener('mouseleave', function(){ /* keep dragging across document for RMB/MMB */ })
     canvas.addEventListener('contextmenu', function(e){ e.preventDefault() })
+    // Inline text editing on double click
+    var textEditorEl = null
+    var textEditorTargetId = ''
+    const ensureTextEditor = function(){
+        if (textEditorEl) return textEditorEl
+        const inp = document.createElement('input')
+        inp.type = 'text'
+        inp.id = 'canvasTextEditor'
+        inp.style.position = 'fixed'
+        inp.style.zIndex = '1000'
+        inp.style.padding = '6px 8px'
+        inp.style.border = '1px solid rgba(0,0,0,0.3)'
+        inp.style.borderRadius = '0px'
+        inp.style.background = '#fff'
+        inp.style.color = '#000'
+        inp.style.boxShadow = '0 8px 18px rgba(0,0,0,0.12)'
+        inp.style.display = 'none'
+        inp.addEventListener('keydown', function(ev){
+            if (ev.key === 'Enter') { commitTextEdit(); ev.preventDefault() }
+            if (ev.key === 'Escape') { cancelTextEdit(); ev.preventDefault() }
+        })
+        inp.addEventListener('blur', function(){ commitTextEdit() })
+        document.body.appendChild(inp)
+        textEditorEl = inp
+        return inp
+    }
+    const openTextEditorFor = function(targetId, clientX, clientY){
+        const inp = ensureTextEditor()
+        textEditorTargetId = targetId || ''
+        const src = eId(textEditorTargetId)
+        if (!src) return
+        inp.value = src.value || ''
+        inp.style.left = Math.round(clientX + 8) + 'px'
+        inp.style.top = Math.round(clientY + 8) + 'px'
+        inp.style.display = 'block'
+        setTimeout(function(){ try { inp.focus(); inp.select(); } catch(e){} }, 0)
+    }
+    const hideTextEditor = function(){ if (textEditorEl) { textEditorEl.style.display = 'none' } }
+    const commitTextEdit = function(){
+        if (!textEditorEl || !textEditorTargetId) { hideTextEditor(); return }
+        const dst = eId(textEditorTargetId)
+        if (dst && dst.value !== textEditorEl.value) { dst.value = textEditorEl.value }
+        hideTextEditor(); render()
+    }
+    const cancelTextEdit = function(){ hideTextEditor() }
+    canvas.addEventListener('dblclick', function(e){
+        const p = getCanvasXY(e)
+        const layers = getLayersFrontToBack()
+        for (let i = 0; i < layers.length; i++) {
+            const d = layers[i]
+            if (d.kind === 'text' && isHit(p.x, p.y, d)) {
+                setSelected(d.id)
+                openTextEditorFor(d.id, e.clientX, e.clientY)
+                e.preventDefault()
+                return
+            }
+        }
+    })
+    // Hover cursor hint when over text
+    canvas.addEventListener('mousemove', function(e){
+        if (dragState) return
+        const p = getCanvasXY(e)
+        const layers = getLayersFrontToBack()
+        let overText = false
+        for (let i = 0; i < layers.length; i++) {
+            const d = layers[i]
+            if (d.kind === 'text' && isHit(p.x, p.y, d)) { overText = true; break }
+        }
+        canvas.style.cursor = overText ? 'text' : ''
+    })
     // Mouse wheel zoom
     canvas.addEventListener('wheel', function(e){
         if (!selectedId) return

@@ -1,4 +1,4 @@
-# Youtube Thumbnail Generator
+# Free Youtube Thumbnail Generator
 
 A lightweight, single‑page canvas app to compose YouTube‑style thumbnails. Load or generate background/overlay images, position a pose cutout, add two big headline lines, tweak transforms (x/y/scale/rotation/mirror), and export a ready‑to‑use image.
 
