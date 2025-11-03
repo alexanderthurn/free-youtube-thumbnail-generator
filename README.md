@@ -2,6 +2,10 @@
 
 A lightweight, single‑page canvas app to compose YouTube‑style thumbnails. Load or generate background/overlay images, position a pose cutout, add two big headline lines, tweak transforms (x/y/scale/rotation/mirror), and export a ready‑to‑use image.
 
+## Preview
+![Editor UI](misc/editor.jpg)
+![Generated result example](misc/example.jpg)
+
 The frontend is pure HTML5 Canvas (`index.html`). A tiny PHP helper (`image.php`) handles two things:
 - Generating images from prompts via Google Gemini (by sending `gemini://<prompt>` URLs)
 - Proxying HTTPS image URLs (e.g., Unsplash) to avoid CORS and attach an API key when available
