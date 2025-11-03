@@ -162,17 +162,21 @@ function fetch_bytes_and_mime($url, $defaultMime = 'image/png') {
         $basePath = rtrim(str_replace('\\','/', dirname($scriptName)), '/'); // e.g., /yout-thu
         $rel = ltrim(preg_replace('#^\./#', '', $url), '/'); // image.php?...
         $absolute = $scheme . '://' . $host . ($basePath ? $basePath : '') . '/' . $rel;
+        $forwardKey = trim((string)($_SERVER['HTTP_X_GEMINI_API_KEY'] ?? ''));
         $ch = curl_init($absolute);
-        curl_setopt_array($ch, [
+        $hdrs = [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTPHEADER => [
-                'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8'
-            ],
+            CURLOPT_HTTPHEADER => [ 'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8' ],
             CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-        ]);
+        ];
+        if ($forwardKey !== '') {
+            $headers = [ 'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8', 'X-Gemini-API-Key: ' . $forwardKey ];
+            $hdrs[CURLOPT_HTTPHEADER] = $headers;
+        }
+        curl_setopt_array($ch, $hdrs);
         $data = curl_exec($ch);
         if ($data !== false) {
             $ct = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
@@ -238,7 +242,16 @@ if (is_readable($envPath)) {
 
 # --- Branch: GEMINI Bildgenerierung ---
 if ($isGemini) {
-    $apiKey = isset($env['GEMINI_API_KEY']) ? $env['GEMINI_API_KEY'] : getenv('GEMINI_API_KEY');
+    $envKey = isset($env['GEMINI_API_KEY']) ? $env['GEMINI_API_KEY'] : getenv('GEMINI_API_KEY');
+    $headerKey = trim((string)($_SERVER['HTTP_X_GEMINI_API_KEY'] ?? ''));
+    $action = get_param('action', '');
+    if ($action === 'has_key') {
+        header('Content-Type: application/json');
+        header('Cache-Control: no-store, max-age=0');
+        echo json_encode([ 'hasKey' => !empty($envKey) ]);
+        exit;
+    }
+    $apiKey = ($headerKey !== '') ? $headerKey : $envKey;
     if (empty($apiKey)) { output_error_image('Missing GEMINI_API_KEY. Define it in .env or environment.', 500); }
 
     # Prompt aus gemini://... extrahieren (URL-encodiertes Query-Value wird hier nochmals decodiert)
