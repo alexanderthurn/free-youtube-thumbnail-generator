@@ -59,7 +59,7 @@
                 id="spanPoses"></span><span id="spanPosesPosition" class="ui-level-1"></span><button id="btnPromptPose" class="ui-level-0" title="Generate with prompt">AI</button><span id="spanPromptPose" class="ui-level-1" style="display:none;">
                 <div class="prompt-label">Gemini AI</div>
                 <textarea id="inputPromptPose" rows="5" class="prompt-textarea" placeholder="Describe pose edit...">Using the provided image of a man in a suit, give him a magic hat. Ensure the man's face and features remain completely unchanged. The background has to be #ff00ff.</textarea>
-                <button id="btnGeneratePose" title="Generate pose image">Generate</button> <label title="Apply chroma key to pose"><input id="chkPoseMask" type="checkbox" checked> Mask</label> <button id="btnPoseSample" title="Sample key color from borders of pose">Sample</button> Color: <input id="inputPoseKeyColor" type="color" value="#ff00ff"> Tolerance: <input id="inputPoseTolerance" type="range" min="-1" max="255" value="0"> <br>Softness: <input id="inputPoseSoftness" type="range" min="-1" max="255" value="0"></span><input id="inputPoseURL" type="hidden" data-force-imageload /></div>
+                <button id="btnGeneratePose" title="Generate pose image">Generate</button> <label class="ui-level-1" title="Include Background as reference"><input id="chkPoseBackground" type="checkbox"> Background</label> <label class="ui-level-1" title="Include Pose as reference"><input id="chkPosePose" type="checkbox" checked> Pose</label> <label class="ui-level-1" title="Include Object1 as reference"><input id="chkPoseSecond" type="checkbox"> Object1</label> <label class="ui-level-1" title="Include Object2 as reference"><input id="chkPoseThird" type="checkbox"> Object2</label> <label title="Apply chroma key to pose"><input id="chkPoseMask" type="checkbox" checked> Mask</label> <button id="btnPoseSample" title="Sample key color from borders of pose">Sample</button> Color: <input id="inputPoseKeyColor" type="color" value="#ff00ff"> Tolerance: <input id="inputPoseTolerance" type="range" min="-1" max="255" value="0"> <br>Softness: <input id="inputPoseSoftness" type="range" min="-1" max="255" value="0"></span><input id="inputPoseURL" type="hidden" data-force-imageload /></div>
     </section>
 
     <section class="panel glass" id="card-text1">
@@ -76,7 +76,7 @@
                 data-image-target="inputSecondURL" /><span id="spanSecondPosition"></span><button id="btnPromptSecond" title="Generate with prompt">AI</button><span id="spanPromptSecond" style="display:none;">
                 <div class="prompt-label">Gemini AI</div>
                 <textarea id="inputPromptSecond" rows="4" class="prompt-textarea" placeholder="Describe second image...">A cute panda. The background has to be #ff00ff.</textarea>
-                <button id="btnGenerateSecond" title="Generate second image">Generate</button> <label title="Apply chroma key to Object1"><input id="chkSecondMask" type="checkbox" checked> Mask</label> <button id="btnSecondSample" title="Sample key color from borders of Object1">Sample</button> Color: <input id="inputSecondKeyColor" type="color" value="#ff00ff"> Tolerance: <input id="inputSecondTolerance" type="range" min="-1" max="255" value="0"> <br>Softness: <input id="inputSecondSoftness" type="range" min="-1" max="255" value="0"></span></div>
+                <button id="btnGenerateSecond" title="Generate second image">Generate</button> <label class="ui-level-1" title="Include Pose as reference"><input id="chkSecondPose" type="checkbox"> Pose</label> <label class="ui-level-1" title="Include Object1 as reference"><input id="chkSecondSecond" type="checkbox" checked> Object1</label> <label class="ui-level-1" title="Include Object2 as reference"><input id="chkSecondThird" type="checkbox"> Object2</label> <label title="Apply chroma key to Object1"><input id="chkSecondMask" type="checkbox" checked> Mask</label> <button id="btnSecondSample" title="Sample key color from borders of Object1">Sample</button> Color: <input id="inputSecondKeyColor" type="color" value="#ff00ff"> Tolerance: <input id="inputSecondTolerance" type="range" min="-1" max="255" value="0"> <br>Softness: <input id="inputSecondSoftness" type="range" min="-1" max="255" value="0"></span></div>
     </section>
 
     <section class="panel glass ui-level-1" id="card-third">
@@ -84,7 +84,7 @@
                 data-image-target="inputThirdURL" /><span id="spanThirdPosition"></span><button id="btnPromptThird" title="Generate with prompt">AI</button><span id="spanPromptThird" style="display:none;">
                 <div class="prompt-label">Gemini AI</div>
                 <textarea id="inputPromptThird" rows="4" class="prompt-textarea" placeholder="Describe third image...">A mighty eagle.The background has to be #ff00ff.</textarea>
-                <button id="btnGenerateThird" title="Generate third image">Generate</button> <label title="Apply chroma key to Object2"><input id="chkThirdMask" type="checkbox" checked> Mask</label> <button id="btnThirdSample" title="Sample key color from borders of Object2">Sample</button> Color: <input id="inputThirdKeyColor" type="color" value="#ff00ff"> Tolerance: <input id="inputThirdTolerance" type="range" min="-1" max="255" value="0"> <br>Softness: <input id="inputThirdSoftness" type="range" min="-1" max="255" value="0"></span></div>
+                <button id="btnGenerateThird" title="Generate third image">Generate</button> <label class="ui-level-1" title="Include Pose as reference"><input id="chkThirdPose" type="checkbox"> Pose</label> <label class="ui-level-1" title="Include Object1 as reference"><input id="chkThirdSecond" type="checkbox"> Object1</label> <label class="ui-level-1" title="Include Object2 as reference"><input id="chkThirdThird" type="checkbox" checked> Object2</label> <label title="Apply chroma key to Object2"><input id="chkThirdMask" type="checkbox" checked> Mask</label> <button id="btnThirdSample" title="Sample key color from borders of Object2">Sample</button> Color: <input id="inputThirdKeyColor" type="color" value="#ff00ff"> Tolerance: <input id="inputThirdTolerance" type="range" min="-1" max="255" value="0"> <br>Softness: <input id="inputThirdSoftness" type="range" min="-1" max="255" value="0"></span></div>
     </section>
 
     <section class="panel glass" id="card-canvascolor">
@@ -1091,52 +1091,152 @@
 	})
 
     // Generate via Gemini for Object1
-    btnGenerateSecond.addEventListener('click', function () {
+    btnGenerateSecond.addEventListener('click', async function () {
         if (!ensureGeminiKeyOrEnv()) { return }
-		const prompt = inputPromptSecond.value.trim()
-		if (!prompt) { return }
-		const previousText = this.textContent
-		this.disabled = true
-		this.textContent = '⏳'
+        const prompt = inputPromptSecond.value.trim()
+        if (!prompt) { return }
+        const previousText = this.textContent
+        this.disabled = true
+        this.textContent = '⏳'
+
+        const anyEmbed = (!!(typeof chkSecondPose!== 'undefined' && chkSecondPose.checked)) || (!!(typeof chkSecondSecond!== 'undefined' && chkSecondSecond.checked && inputSecondURL.value)) || (!!(typeof chkSecondThird!== 'undefined' && chkSecondThird.checked && inputThirdURL.value))
+        if (anyEmbed) {
+            try {
+                const fd = new FormData()
+                fd.append('url', 'gemini://' + prompt)
+                fd.append('ar', '16:9')
+                fd.append('kind', 'object')
+                // Pose ref
+                if (typeof chkSecondPose !== 'undefined' && chkSecondPose.checked) {
+                    let poseRef = ''
+                    if (inputPoseURL.value) { poseRef = inputPoseURL.value } else { poseRef = 'img/poses/' + inputPose.value + '.png' }
+                    const { base64, mime } = await fetchUrlAsBase64(poseRef)
+                    fd.append('ref_pose_data', base64)
+                    fd.append('ref_pose_mime', mime)
+                }
+                // Second (self) ref
+                if (typeof chkSecondSecond !== 'undefined' && chkSecondSecond.checked && inputSecondURL.value) {
+                    const { base64, mime } = await fetchUrlAsBase64(inputSecondURL.value)
+                    fd.append('ref_second_data', base64)
+                    fd.append('ref_second_mime', mime)
+                }
+                // Third ref
+                if (typeof chkSecondThird !== 'undefined' && chkSecondThird.checked && inputThirdURL.value) {
+                    const { base64, mime } = await fetchUrlAsBase64(inputThirdURL.value)
+                    fd.append('ref_third_data', base64)
+                    fd.append('ref_third_mime', mime)
+                }
+                const headers = {}
+                const k = getGeminiKey()
+                if (k) { headers['X-Gemini-API-Key'] = k }
+                const res = await fetch('./image.php', { method: 'POST', body: fd, headers })
+                const blob = await res.blob()
+                const objectUrl = URL.createObjectURL(blob)
+                inputSecondURL.value = objectUrl
+                suspendPoseGeminiOnce = true
+                await loadImagesAndRender()
+                try { populateAssetLists() } catch(e) {}
+                this.disabled = false
+                this.textContent = previousText
+                suspendPoseGeminiOnce = false
+            } catch(e) {
+                this.disabled = false
+                this.textContent = previousText
+                suspendPoseGeminiOnce = false
+            }
+            return
+        }
+
+        // Fallback: simple gemini URL (no refs)
         inputSecondURL.value = 'gemini://' + prompt
-		suspendPoseGeminiOnce = true
+        suspendPoseGeminiOnce = true
         loadImagesAndRender()
-			.then(() => {
-				suspendPoseGeminiOnce = false
-				this.disabled = false
+            .then(() => {
+                suspendPoseGeminiOnce = false
+                this.disabled = false
                 this.textContent = previousText
                 try { populateAssetLists() } catch(e) {}
-			})
-			.catch(() => {
-				suspendPoseGeminiOnce = false
-				this.disabled = false
-				this.textContent = previousText
-			})
-	})
+            })
+            .catch(() => {
+                suspendPoseGeminiOnce = false
+                this.disabled = false
+                this.textContent = previousText
+            })
+    })
 
     // Generate via Gemini for Object2
-    btnGenerateThird.addEventListener('click', function () {
+    btnGenerateThird.addEventListener('click', async function () {
         if (!ensureGeminiKeyOrEnv()) { return }
-		const prompt = inputPromptThird.value.trim()
-		if (!prompt) { return }
-		const previousText = this.textContent
-		this.disabled = true
-		this.textContent = '⏳'
+        const prompt = inputPromptThird.value.trim()
+        if (!prompt) { return }
+        const previousText = this.textContent
+        this.disabled = true
+        this.textContent = '⏳'
+
+        const anyEmbed = (!!(typeof chkThirdPose!== 'undefined' && chkThirdPose.checked)) || (!!(typeof chkThirdSecond!== 'undefined' && chkThirdSecond.checked && inputSecondURL.value)) || (!!(typeof chkThirdThird!== 'undefined' && chkThirdThird.checked && inputThirdURL.value))
+        if (anyEmbed) {
+            try {
+                const fd = new FormData()
+                fd.append('url', 'gemini://' + prompt)
+                fd.append('ar', '16:9')
+                fd.append('kind', 'object')
+                // Pose ref
+                if (typeof chkThirdPose !== 'undefined' && chkThirdPose.checked) {
+                    let poseRef = ''
+                    if (inputPoseURL.value) { poseRef = inputPoseURL.value } else { poseRef = 'img/poses/' + inputPose.value + '.png' }
+                    const { base64, mime } = await fetchUrlAsBase64(poseRef)
+                    fd.append('ref_pose_data', base64)
+                    fd.append('ref_pose_mime', mime)
+                }
+                // Second ref
+                if (typeof chkThirdSecond !== 'undefined' && chkThirdSecond.checked && inputSecondURL.value) {
+                    const { base64, mime } = await fetchUrlAsBase64(inputSecondURL.value)
+                    fd.append('ref_second_data', base64)
+                    fd.append('ref_second_mime', mime)
+                }
+                // Third (self) ref
+                if (typeof chkThirdThird !== 'undefined' && chkThirdThird.checked && inputThirdURL.value) {
+                    const { base64, mime } = await fetchUrlAsBase64(inputThirdURL.value)
+                    fd.append('ref_third_data', base64)
+                    fd.append('ref_third_mime', mime)
+                }
+                const headers = {}
+                const k = getGeminiKey()
+                if (k) { headers['X-Gemini-API-Key'] = k }
+                const res = await fetch('./image.php', { method: 'POST', body: fd, headers })
+                const blob = await res.blob()
+                const objectUrl = URL.createObjectURL(blob)
+                inputThirdURL.value = objectUrl
+                suspendPoseGeminiOnce = true
+                await loadImagesAndRender()
+                try { populateAssetLists() } catch(e) {}
+                this.disabled = false
+                this.textContent = previousText
+                suspendPoseGeminiOnce = false
+            } catch(e) {
+                this.disabled = false
+                this.textContent = previousText
+                suspendPoseGeminiOnce = false
+            }
+            return
+        }
+
+        // Fallback: simple gemini URL (no refs)
         inputThirdURL.value = 'gemini://' + prompt
-		suspendPoseGeminiOnce = true
+        suspendPoseGeminiOnce = true
         loadImagesAndRender()
-			.then(() => {
-				suspendPoseGeminiOnce = false
-				this.disabled = false
+            .then(() => {
+                suspendPoseGeminiOnce = false
+                this.disabled = false
                 this.textContent = previousText
                 try { populateAssetLists() } catch(e) {}
-			})
-			.catch(() => {
-				suspendPoseGeminiOnce = false
-				this.disabled = false
-				this.textContent = previousText
-			})
-	})
+            })
+            .catch(() => {
+                suspendPoseGeminiOnce = false
+                this.disabled = false
+                this.textContent = previousText
+            })
+    })
 
     // --- Pose masking utilities ---
     const hexToRgb = function (hex) {
@@ -1453,19 +1553,41 @@
         this.disabled = true
         this.textContent = '⏳'
         try {
-            // Determine current pose image (AI pose if selected, else base pose)
-            let poseRef = ''
-            if (inputPoseURL.value && inputPoseURL.value.indexOf('blob22:') !== 0) {
-                poseRef = ensureProxyUrl(inputPoseURL.value)
-            } else {
-                poseRef = 'img/poses/' + inputPose.value + '.png'
-            }
-            const { base64, mime } = await fetchUrlAsBase64(poseRef)
             const fd = new FormData()
             fd.append('url', 'gemini://' + prompt)
-            fd.append('pose_data', base64)
-            fd.append('pose_mime', mime)
             fd.append('ar', '9:16')
+
+            // Pose include (controls embedding of pose image for pose generation)
+            if (typeof chkPosePose !== 'undefined' && chkPosePose.checked) {
+                let poseRef = ''
+                if (inputPoseURL.value && inputPoseURL.value.indexOf('blob22:') !== 0) {
+                    poseRef = ensureProxyUrl(inputPoseURL.value)
+                } else {
+                    poseRef = 'img/poses/' + inputPose.value + '.png'
+                }
+                const { base64, mime } = await fetchUrlAsBase64(poseRef)
+                fd.append('pose_data', base64)
+                fd.append('pose_mime', mime)
+            }
+
+            // Optional references
+            const wasBg = inputBackgroundURL.value
+            if (typeof chkPoseBackground !== 'undefined' && chkPoseBackground.checked && wasBg) {
+                const { base64, mime } = await fetchUrlAsBase64(wasBg)
+                fd.append('ref_background_data', base64)
+                fd.append('ref_background_mime', mime)
+            }
+            if (typeof chkPoseSecond !== 'undefined' && chkPoseSecond.checked && inputSecondURL.value) {
+                const { base64, mime } = await fetchUrlAsBase64(inputSecondURL.value)
+                fd.append('ref_second_data', base64)
+                fd.append('ref_second_mime', mime)
+            }
+            if (typeof chkPoseThird !== 'undefined' && chkPoseThird.checked && inputThirdURL.value) {
+                const { base64, mime } = await fetchUrlAsBase64(inputThirdURL.value)
+                fd.append('ref_third_data', base64)
+                fd.append('ref_third_mime', mime)
+            }
+
             const headers = {}
             const k = getGeminiKey()
             if (k) { headers['X-Gemini-API-Key'] = k }
